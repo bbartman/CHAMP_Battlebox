@@ -1,0 +1,146 @@
+ScreenManagement:
+    MainScreen:
+    DeathmatchScreen:
+    BattleRoyaleScreen:
+    SoccerScreen:
+    TournamentScreen:
+    RunDeathmatchScreen:
+	
+<MainScreen>:
+    name: 'main'
+
+    GridLayout:
+        rows:2
+        Label:
+            text: 'Select your battle box game mode:'
+            font_size: 40
+
+        BoxLayout:
+            Button:
+                on_press:
+                    app.root.current = 'deathmatch'
+                    root.manager.transition.direction = 'left'
+                text: 'Deathmatch'
+                font_size: 24
+
+            Button:
+                on_press:
+                    app.root.current = 'battleroyale'
+                    root.manager.transition.direction = 'left'
+                text: 'Battle Royale'
+                font_size: 24
+
+            Button:
+                on_press:
+                    app.root.current = 'soccer'
+                    root.manager.transition.direction = 'left'
+                text: 'Soccer'
+                font_size: 24
+
+            Button:
+                on_press:
+                    app.root.current = 'tournament'
+                    root.manager.transition.direction = 'left'
+                text: 'Deathmatch \nTournament'
+                font_size: 24
+
+                
+<DeathmatchScreen>:
+    name: 'deathmatch'
+    ScrollView:
+        do_scroll_x: False
+        do_scroll_y: True
+        StackLayout:
+            Label:
+                text: 'Configure deathmatch:'
+                font_size: 40
+                size_hint: [1, .2]
+            GridLayout:
+                size_hint: [1, .11]
+                cols:2
+                Label:
+                    text: "Match Duration (Seconds):"
+                    size_hint: [1, .2]
+                    font_size: 30
+                    halign: "left"
+                TextInput:
+                    input_filter: "int"
+                    size_hint: [1, .2]
+                    text: "180"
+                    font_size: 50
+                    halign: "left"
+
+            GridLayout:
+                size_hint: [1, .2]
+                cols:2
+                Button:
+                    on_press:
+                        app.root.current = 'main'
+                        root.manager.transition.direction = 'right'
+                    text: 'back'
+                    font_size: 30
+                Button:
+                    on_press:
+                        app.root.current = 'runDeathmatchExecute'
+                        root.manager.transition.direction = 'left'
+                    text: 'Battle'
+                    font_size: 30
+
+
+
+
+<BattleRoyaleScreen>:
+    name: 'battleroyale'
+
+    Button:
+        on_press:
+            app.root.current = 'main'
+            root.manager.transition.direction = 'right'
+        text: 'back to the home screen'
+        font_size: 50
+
+<SoccerScreen>:
+    name: 'soccer'
+    Button:
+        on_press:
+            app.root.current = 'main'
+            root.manager.transition.direction = 'right'
+        text: 'back to the home screen'
+        font_size: 50
+
+<TournamentScreen>:
+    name: 'tournament'
+
+    Button:
+        on_press:
+            app.root.current = 'main'
+            root.manager.transition.direction = 'right'
+        text: 'back to the home screen'
+        font_size: 50
+
+
+<RunDeathmatchScreen>
+    name: 'runDeathmatchExecute'
+    GridLayout:
+        rows:2
+        Button:
+            text: 'Player 1 Won'
+            font_size: 50
+        
+        Button:
+            text: 'Player 2 Won'
+            font_size: 50
+
+        Button:
+            on_press:
+                app.root.current = 'deathmatch'
+                root.manager.transition.direction = 'right'
+            text: 'Reconfigure'
+            font_size: 50
+
+        Button:
+            on_press:
+                app.root.current = 'main'
+                root.manager.transition.direction = 'left'
+            text: 'Scrub Match'
+            font_size: 50
