@@ -5,7 +5,7 @@ ScreenManagement:
     SoccerScreen:
     TournamentScreen:
     RunDeathmatchScreen:
-	
+
 <MainScreen>:
     name: 'main'
 
@@ -44,31 +44,82 @@ ScreenManagement:
                 text: 'Deathmatch \nTournament'
                 font_size: 24
 
-                
+<DoorDropScreenManager>:
+    DD_DropAfterTimeScreen:
+    DD_NoDropScreen:
+    DD_AlwaysOpenScreen:
+    
+<DD_NoDropScreen>:
+    name: 'no_drop'
+    size_hint:[1, None]
+    BoxLayout:
+        Label:
+            text: 'dont open the doors'
+
+<DD_AlwaysOpenScreen>:
+    name: "always_open"
+    size_hint:[1, None]
+    BoxLayout:
+        Label:
+            text: "Doors are always open"
+
+<DD_DropAfterTimeScreen>:
+    name: "open_after_time"
+    size_hint:[1, .55]
+    BoxLayout:
+        Label:
+            text: "Open after a time"
+
+<CustomDropDown>: 
+    Button: 
+        text: 'College Name'
+        size_hint_y: None
+        height: 44
+        on_release: root.select('College is') 
+    Label: 
+        text: 'Not in college'
+        size_hint_y: None
+        height: 44
+    Button: 
+        text: 'KccItm'
+        size_hint_y: None
+        height: 44
+        on_release: root.select('Kcc') 
+
 <DeathmatchScreen>:
     name: 'deathmatch'
     ScrollView:
         do_scroll_x: False
         do_scroll_y: True
         StackLayout:
+            size_hint: [1, 1.66]
             Label:
                 text: 'Configure deathmatch:'
                 font_size: 40
                 size_hint: [1, .2]
-            GridLayout:
-                size_hint: [1, .11]
-                cols:2
-                Label:
-                    text: "Match Duration (Seconds):"
-                    size_hint: [1, .2]
-                    font_size: 30
-                    halign: "left"
-                TextInput:
-                    input_filter: "int"
-                    size_hint: [1, .2]
-                    text: "180"
-                    font_size: 50
-                    halign: "left"
+            StackLayout:
+                size_hint: [1, .55]
+                GridLayout:
+                    size_hint: [1, .11]
+                    cols:2
+                    Label:
+                        text: "Match Duration (Seconds):"
+                        size_hint: [1, .2]
+                        font_size: 30
+                        halign: "left"
+                    TextInput:
+                        input_filter: "int"
+                        size_hint: [1, .2]
+                        text: "180"
+                        font_size: 50
+                        halign: "left"
+                DropdownDemo:
+                    size_hint: [1, None]
+                    cols: 2
+                        
+                DoorDropScreenManager:
+                    current:"open_after_time"
+                    
 
             GridLayout:
                 size_hint: [1, .2]
