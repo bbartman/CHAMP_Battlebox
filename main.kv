@@ -5,6 +5,7 @@ ScreenManagement:
     SoccerScreen:
     TournamentScreen:
     RunDeathmatchScreen:
+    RunSoccerScreen:
 
 <MainScreen>:
     name: 'main'
@@ -23,72 +24,61 @@ ScreenManagement:
                 text: 'Deathmatch'
                 font_size: 24
 
-            Button:
-                on_press:
-                    app.root.current = 'battleroyale'
-                    root.manager.transition.direction = 'left'
-                text: 'Battle Royale'
-                font_size: 24
-
+            #Button:
+            #    on_press:
+            #        app.root.current = 'battleroyale'
+            #        root.manager.transition.direction = 'left'
+            #    text: 'Battle Royale'
+            #    font_size: 24
+            #
             Button:
                 on_press:
                     app.root.current = 'soccer'
                     root.manager.transition.direction = 'left'
                 text: 'Soccer'
                 font_size: 24
+            
+            #Button:
+            #    on_press:
+            #        app.root.current = 'tournament'
+            #        root.manager.transition.direction = 'left'
+            #    text: 'Deathmatch \nTournament'
+            #    font_size: 24
 
-            Button:
-                on_press:
-                    app.root.current = 'tournament'
-                    root.manager.transition.direction = 'left'
-                text: 'Deathmatch \nTournament'
-                font_size: 24
-
-<DoorDropScreenManager>:
-    DD_DropAfterTimeScreen:
-    DD_NoDropScreen:
-    DD_AlwaysOpenScreen:
-    
-<DD_NoDropScreen>:
-    name: 'no_drop'
-    size_hint:[1, None]
-    BoxLayout:
-        Label:
-            text: 'dont open the doors'
-
-<DD_AlwaysOpenScreen>:
-    name: "always_open"
-    size_hint:[1, None]
-    BoxLayout:
-        Label:
-            text: "Doors are always open"
-
-<DD_DropAfterTimeScreen>:
-    name: "open_after_time"
-    size_hint:[1, .55]
-    BoxLayout:
-        Label:
-            text: "Open after a time"
-
-<CustomDropDown>: 
+<CustomDropDown>:
     Button: 
-        text: 'College Name'
+        text: 'Drop Both'
         size_hint_y: None
-        height: 44
-        on_release: root.select('College is') 
-    Label: 
-        text: 'Not in college'
-        size_hint_y: None
-        height: 44
+        height: 80
+        on_release: root.select('Drop Both')
     Button: 
-        text: 'KccItm'
+        text: 'Doors Always Open'
         size_hint_y: None
-        height: 44
-        on_release: root.select('Kcc') 
+        height: 80
+        on_release: root.select('Doors Always Open')
+    Button: 
+        size_hint: [1, .44]
+        text: 'Drop Red Player Door Only'
+        size_hint_y: None
+        height: 80
+        on_release: root.select('Drop Red Player Door Only')
+    Button: 
+        size_hint: [1, .44]
+        text: 'Drop Blue Player Door Only'
+        size_hint_y: None
+        height: 80
+        on_release: root.select('Drop Blue Player Door Only')
+    Button: 
+        text: 'Drop Random Door'
+        size_hint_y: None
+        height: 80
+        on_release: root.select('Drop Random Door')
+
 
 <DeathmatchScreen>:
     name: 'deathmatch'
     ScrollView:
+        size_hint_y: 1
         do_scroll_x: False
         do_scroll_y: True
         StackLayout:
@@ -96,41 +86,78 @@ ScreenManagement:
             Label:
                 text: 'Configure deathmatch:'
                 font_size: 40
-                size_hint: [1, .2]
-            StackLayout:
-                size_hint: [1, .55]
-                GridLayout:
-                    size_hint: [1, .11]
-                    cols:2
-                    Label:
-                        text: "Match Duration (Seconds):"
-                        size_hint: [1, .2]
-                        font_size: 30
-                        halign: "left"
-                    TextInput:
-                        input_filter: "int"
-                        size_hint: [1, .2]
-                        text: "180"
-                        font_size: 50
-                        halign: "left"
-                DropdownDemo:
-                    size_hint: [1, None]
-                    cols: 2
-                        
-                DoorDropScreenManager:
-                    current:"open_after_time"
-                    
-
+                size_hint: [1, .07]
             GridLayout:
-                size_hint: [1, .2]
+                size_hint: [1, .055]
+                cols:2
+                Label:
+                    size_hint: [1, .055]
+                    text: "Match Duration (Seconds):"
+                    font_size: 30
+                    halign: "left"
+                TextInput:
+                    size_hint: [1, .055]
+                    input_filter: "int"
+                    text: "180"
+                    font_size: 30
+                    halign: "left"
+            DropdownDemo:
+                size_hint: [1, .055]
+                padding: 0
+                spacing: 0
+                cols: 2
+            GridLayout:
+                size_hint: [1, .055]
+                cols:2
+                Label:
+                    size_hint: [1, .055]
+                    text: "Door drop timer:"
+                    font_size: 30
+                    halign: "left"
+                TextInput:
+                    size_hint: [1, .055]
+                    input_filter: "int"
+                    text: "120"
+                    font_size: 30
+                    halign: "left"
+            GridLayout:
+                size_hint: [1, .055]
+                cols:2
+                Label:
+                    text: "Player One Name"
+                    font_size: 30
+                    halign: "left"
+                    size_hint: [1, .055]
+                TextInput:
+                    text: ""
+                    font_size: 30
+                    halign: "left"
+                    size_hint: [1, .055]
+            GridLayout:
+                size_hint: [1, .055]
+                cols:2
+                Label:
+                    size_hint: [1, .055]
+                    text: "Player Two Name"
+                    font_size: 30
+                    halign: "left"
+                TextInput:
+                    size_hint: [1, .055]
+                    text: ""
+                    font_size: 30
+                    halign: "left"
+            GridLayout:
+                size_hint: [1, .22]
                 cols:2
                 Button:
+                    size_hint: [1, .22]
                     on_press:
                         app.root.current = 'main'
                         root.manager.transition.direction = 'right'
                     text: 'back'
                     font_size: 30
                 Button:
+                    size_hint: [1, .22]
                     on_press:
                         app.root.current = 'runDeathmatchExecute'
                         root.manager.transition.direction = 'left'
@@ -152,12 +179,114 @@ ScreenManagement:
 
 <SoccerScreen>:
     name: 'soccer'
-    Button:
-        on_press:
-            app.root.current = 'main'
-            root.manager.transition.direction = 'right'
-        text: 'back to the home screen'
-        font_size: 50
+    ScrollView:
+        size_hint_y: 1
+        do_scroll_x: False
+        do_scroll_y: True
+        StackLayout:
+            size_hint: [1, 1.66]
+            Label:
+                text: 'Configure Soccer Match:'
+                font_size: 40
+                size_hint: [1, .07]
+            GridLayout:
+                size_hint: [1, .165]
+                cols:2
+                Label:
+                    size_hint: [1, .055]
+                    text: "Match Duration (Seconds):"
+                    font_size: 30
+                    halign: "left"
+                TextInput:
+                    size_hint: [1, .055]
+                    input_filter: "int"
+                    text: "300"
+                    font_size: 30
+                    halign: "left"
+                Label:
+                    size_hint: [1, .055]
+                    text: "Points:"
+                    font_size: 30
+                    halign: "left"
+                TextInput:
+                    size_hint: [1, .055]
+                    input_filter: "int"
+                    text: "5"
+                    font_size: 30
+                    halign: "left"
+                Label:
+                    text: "Team One Name"
+                    font_size: 30
+                    halign: "left"
+                    size_hint: [1, .055]
+                TextInput:
+                    text: ""
+                    font_size: 30
+                    halign: "left"
+                    size_hint: [1, .055]
+            GridLayout:
+                size_hint: [1, .055]
+                cols:2
+                Label:
+                    size_hint: [1, .055]
+                    text: "Team Two Name"
+                    font_size: 30
+                    halign: "left"
+                TextInput:
+                    size_hint: [1, .055]
+                    text: ""
+                    font_size: 30
+                    halign: "left"
+            GridLayout:
+                size_hint: [1, .22]
+                cols:2
+                Button:
+                    text: 'back'
+                    size_hint: [1, .22]
+                    on_press:
+                        app.root.current = 'main'
+                        root.manager.transition.direction = 'right'
+                    font_size: 30
+                Button:
+                    text: 'Start Game'
+                    size_hint: [1, .22]
+                    on_press:
+                        app.root.current = 'RunSoccer'
+                        root.manager.transition.direction = 'left'
+                    font_size: 30
+<RunSoccerScreen>
+    name: "RunSoccer"
+    GridLayout:
+        rows:2
+        Button:
+            text: 'Team 1\nScored'
+            font_size: 30
+        
+        Button:
+            text: 'Team 2\nScored'
+            font_size: 30
+
+        Button:
+            text: 'Team 1\nWins'
+            font_size: 30
+        
+        Button:
+            text: 'Team 2\nWins'
+            font_size: 30
+
+        Button:
+            on_press:
+                app.root.current = 'soccer'
+                root.manager.transition.direction = 'right'
+            text: 'Reconfigure'
+            font_size: 30
+
+        Button:
+            text: 'Scrub Match'
+            on_press:
+                app.root.current = 'main'
+                root.manager.transition.direction = 'left'
+            font_size: 30
 
 <TournamentScreen>:
     name: 'tournament'
@@ -176,22 +305,22 @@ ScreenManagement:
         rows:2
         Button:
             text: 'Player 1 Won'
-            font_size: 50
+            font_size: 30
         
         Button:
             text: 'Player 2 Won'
-            font_size: 50
+            font_size: 30
 
         Button:
             on_press:
                 app.root.current = 'deathmatch'
                 root.manager.transition.direction = 'right'
             text: 'Reconfigure'
-            font_size: 50
+            font_size: 30
 
         Button:
             on_press:
                 app.root.current = 'main'
                 root.manager.transition.direction = 'left'
             text: 'Scrub Match'
-            font_size: 50
+            font_size: 30
