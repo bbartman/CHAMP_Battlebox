@@ -6,17 +6,13 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
+from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty
+from BattleBox.data import BBViewModelProp
 
 class MainScreen(Screen):
     pass
 
 class DeathmatchScreen(Screen):
-    pass
-
-class DeathmatchScreen(Screen):
-    pass
-
-class BattleRoyaleScreen(Screen):
     pass
 
 class SoccerScreen(Screen):
@@ -25,25 +21,10 @@ class SoccerScreen(Screen):
 class RunSoccerScreen(Screen):
     pass
 
-class TournamentScreen(Screen):
-    pass
-
 class RunDeathmatchScreen(Screen):
     pass
 
 class ScreenManagement(ScreenManager):
-    pass
-
-class DoorDropScreenManager(ScreenManager):
-    pass
-
-class DD_NoDropScreen(Screen):
-    pass
-
-class DD_AlwaysOpenScreen(Screen):
-    pass
-
-class DD_DropAfterTimeScreen(Screen):
     pass
 
 class CustomDropDown(DropDown): 
@@ -70,12 +51,26 @@ class DropdownDemo(GridLayout):
         print ( "The chosen mode is: {0}" . format ( x ) ) 
 
 
-presentation = Builder.load_file("main.kv")
+#presentation = Builder.load_file("main.kv")
 
 
 class MainApp(App):
+    data = BBViewModelProp()
+    def on_change_current(self, instance, value):
+        print("Derp")
+
+    def on_switch_to_main(self):
+        self.data.current = None
+
+    def __init__(self, **kwargs): 
+        super(MainApp, self).__init__(**kwargs)
+        self.data.bind(current = self.on_change_current)
+        
+
+
     def build(self):
-        return presentation
+        root_widget = ScreenManagement()
+        return root_widget
 
 if __name__ == '__main__':
-    MainApp().run()
+    MainApp().run() 

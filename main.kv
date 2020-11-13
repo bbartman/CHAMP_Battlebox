@@ -1,15 +1,13 @@
-ScreenManagement:
+<ScreenManagement>:
     MainScreen:
     DeathmatchScreen:
-    BattleRoyaleScreen:
-    SoccerScreen:
-    TournamentScreen:
     RunDeathmatchScreen:
+    SoccerScreen:
     RunSoccerScreen:
 
 <MainScreen>:
     name: 'main'
-
+    data: app.data
     GridLayout:
         rows:2
         Label:
@@ -18,61 +16,52 @@ ScreenManagement:
 
         BoxLayout:
             Button:
-                on_press:
+                on_release:
                     app.root.current = 'deathmatch'
                     root.manager.transition.direction = 'left'
+                    app.data.current = app.data.death_match
                 text: 'Deathmatch'
                 font_size: 24
 
-            #Button:
-            #    on_press:
-            #        app.root.current = 'battleroyale'
-            #        root.manager.transition.direction = 'left'
-            #    text: 'Battle Royale'
-            #    font_size: 24
-            #
             Button:
-                on_press:
+                on_release:
                     app.root.current = 'soccer'
                     root.manager.transition.direction = 'left'
+                    app.data.current = app.data.soccer_match
                 text: 'Soccer'
                 font_size: 24
-            
-            #Button:
-            #    on_press:
-            #        app.root.current = 'tournament'
-            #        root.manager.transition.direction = 'left'
-            #    text: 'Deathmatch \nTournament'
-            #    font_size: 24
 
 <CustomDropDown>:
     Button: 
         text: 'Drop Both'
         size_hint_y: None
         height: 80
-        on_release: root.select('Drop Both')
+        on_release:
+            root.select('Drop Both')
     Button: 
         text: 'Doors Always Open'
         size_hint_y: None
         height: 80
-        on_release: root.select('Doors Always Open')
+        on_release:
+            root.select('Doors Always Open')
     Button: 
-        size_hint: [1, .44]
         text: 'Drop Red Player Door Only'
         size_hint_y: None
         height: 80
-        on_release: root.select('Drop Red Player Door Only')
+        on_release:
+            root.select('Drop Red Player Door Only')
     Button: 
-        size_hint: [1, .44]
         text: 'Drop Blue Player Door Only'
         size_hint_y: None
         height: 80
-        on_release: root.select('Drop Blue Player Door Only')
+        on_release:
+            root.select('Drop Blue Player Door Only')
     Button: 
         text: 'Drop Random Door'
         size_hint_y: None
         height: 80
-        on_release: root.select('Drop Random Door')
+        on_release:
+            root.select('Drop Random Door')
 
 
 <DeathmatchScreen>:
@@ -98,7 +87,9 @@ ScreenManagement:
                 TextInput:
                     size_hint: [1, .055]
                     input_filter: "int"
-                    text: "180"
+                    multiline: False
+                    text: app.data.death_match.duration
+                    on_text: app.data.death_match.on_duration(args[0], args[1])
                     font_size: 30
                     halign: "left"
             DropdownDemo:
@@ -117,7 +108,9 @@ ScreenManagement:
                 TextInput:
                     size_hint: [1, .055]
                     input_filter: "int"
-                    text: "120"
+                    multiline: False
+                    text: app.data.death_match.door_drop_duration
+                    on_text: app.data.death_match.on_door_drop_duration(args[0], args[1])
                     font_size: 30
                     halign: "left"
             GridLayout:
@@ -129,6 +122,7 @@ ScreenManagement:
                     halign: "left"
                     size_hint: [1, .055]
                 TextInput:
+                    multiline: False
                     text: ""
                     font_size: 30
                     halign: "left"
@@ -143,6 +137,7 @@ ScreenManagement:
                     halign: "left"
                 TextInput:
                     size_hint: [1, .055]
+                    multiline: False
                     text: ""
                     font_size: 30
                     halign: "left"
@@ -150,32 +145,21 @@ ScreenManagement:
                 size_hint: [1, .22]
                 cols:2
                 Button:
+                    text: 'back'
                     size_hint: [1, .22]
-                    on_press:
+                    on_release:
                         app.root.current = 'main'
                         root.manager.transition.direction = 'right'
-                    text: 'back'
+                        app.on_switch_to_main()
                     font_size: 30
                 Button:
-                    size_hint: [1, .22]
-                    on_press:
-                        app.root.current = 'runDeathmatchExecute'
-                        root.manager.transition.direction = 'left'
                     text: 'Battle'
+                    size_hint: [1, .22]
+                    on_release:
+                        app.root.current = 'RunDeathmatch'
+                        root.manager.transition.direction = 'left'
                     font_size: 30
 
-
-
-
-<BattleRoyaleScreen>:
-    name: 'battleroyale'
-
-    Button:
-        on_press:
-            app.root.current = 'main'
-            root.manager.transition.direction = 'right'
-        text: 'back to the home screen'
-        font_size: 50
 
 <SoccerScreen>:
     name: 'soccer'
@@ -200,6 +184,7 @@ ScreenManagement:
                 TextInput:
                     size_hint: [1, .055]
                     input_filter: "int"
+                    multiline: False
                     text: "300"
                     font_size: 30
                     halign: "left"
@@ -211,6 +196,7 @@ ScreenManagement:
                 TextInput:
                     size_hint: [1, .055]
                     input_filter: "int"
+                    multiline: False
                     text: "5"
                     font_size: 30
                     halign: "left"
@@ -222,7 +208,9 @@ ScreenManagement:
                 TextInput:
                     text: ""
                     font_size: 30
+                    multiline: False
                     halign: "left"
+                    multiline: False
                     size_hint: [1, .055]
             GridLayout:
                 size_hint: [1, .055]
@@ -234,6 +222,7 @@ ScreenManagement:
                     halign: "left"
                 TextInput:
                     size_hint: [1, .055]
+                    multiline: False
                     text: ""
                     font_size: 30
                     halign: "left"
@@ -243,84 +232,98 @@ ScreenManagement:
                 Button:
                     text: 'back'
                     size_hint: [1, .22]
-                    on_press:
+                    on_release:
                         app.root.current = 'main'
                         root.manager.transition.direction = 'right'
+                        app.on_switch_to_main()
                     font_size: 30
                 Button:
                     text: 'Start Game'
                     size_hint: [1, .22]
-                    on_press:
+                    on_release:
                         app.root.current = 'RunSoccer'
                         root.manager.transition.direction = 'left'
                     font_size: 30
+
 <RunSoccerScreen>
     name: "RunSoccer"
-    GridLayout:
-        rows:2
-        Button:
-            text: 'Team 1\nScored'
+    StackLayout:
+        Label:
+            size_hint: [1, .1]
+            text: "Soccer Match"
             font_size: 30
+        GridLayout:
+            size_hint: [1, .9]
+            rows:2
+            Button:
+                text: 'Team 1\nScored'
+                font_size: 30
+
+            Button:
+                text: 'Team 1\nWins'
+                font_size: 30
+
+            Button:
+                text: 'Manually\nAdjust\nScore'
+                font_size: 30
+
+            Button:
+                text: 'Reconfigure'
+                on_release:
+                    app.root.current = 'soccer'
+                    root.manager.transition.direction = 'right'
+                font_size: 30
+
+            Button:
+                text: 'Team 2\nScored'
+                font_size: 30
         
-        Button:
-            text: 'Team 2\nScored'
-            font_size: 30
+            Button:
+                text: 'Team 2\nWins'
+                font_size: 30
 
-        Button:
-            text: 'Team 1\nWins'
-            font_size: 30
-        
-        Button:
-            text: 'Team 2\nWins'
-            font_size: 30
+            Button:
+                text: 'Pause\nGame'
+                font_size: 30
 
-        Button:
-            on_press:
-                app.root.current = 'soccer'
-                root.manager.transition.direction = 'right'
-            text: 'Reconfigure'
-            font_size: 30
-
-        Button:
-            text: 'Scrub Match'
-            on_press:
-                app.root.current = 'main'
-                root.manager.transition.direction = 'left'
-            font_size: 30
-
-<TournamentScreen>:
-    name: 'tournament'
-
-    Button:
-        on_press:
-            app.root.current = 'main'
-            root.manager.transition.direction = 'right'
-        text: 'back to the home screen'
-        font_size: 50
+            Button:
+                text: 'Scrub Match'
+                on_release:
+                    app.root.current = 'main'
+                    root.manager.transition.direction = 'left'
+                    app.on_switch_to_main()
+                font_size: 30
 
 
 <RunDeathmatchScreen>
-    name: 'runDeathmatchExecute'
-    GridLayout:
-        rows:2
-        Button:
-            text: 'Player 1 Won'
+    name: 'RunDeathmatch'
+    StackLayout:
+        Label:
+            size_hint: [1, .1]
+            text: "Deathmatch"
             font_size: 30
+        GridLayout:
+            size_hint: [1, .9]
+            rows:2
+            Button:
+                text: 'Player 1 Won'
+                font_size: 30
         
-        Button:
-            text: 'Player 2 Won'
-            font_size: 30
+            Button:
+                text: 'Player 2 Won'
+                font_size: 30
 
-        Button:
-            on_press:
-                app.root.current = 'deathmatch'
-                root.manager.transition.direction = 'right'
-            text: 'Reconfigure'
-            font_size: 30
+            Button:
+                text: 'Reconfigure'
+                on_release:
+                    app.root.current = 'deathmatch'
+                    root.manager.transition.direction = 'right'
+                font_size: 30
 
-        Button:
-            on_press:
-                app.root.current = 'main'
-                root.manager.transition.direction = 'left'
-            text: 'Scrub Match'
-            font_size: 30
+            Button:
+                text: 'Scrub Match'
+                on_release:
+                    app.root.current = 'main'
+                    root.manager.transition.direction = 'left'
+                    app.on_switch_to_main()
+                font_size: 30
