@@ -1,0 +1,18 @@
+Things to do:
+
+1. Add input verification to battle config menus.
+2. Create match execution widget (or possibly not a widget)
+3. Match display timer.
+4. Create FSM for match timer so we can correctly emit the right events when the occur.
+5. Figure out the libraries that I'll need in order to operatate the pi side of things.
+	a. Neopixel lights library https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel
+	b. gpio zero - documentation https://gpiozero.readthedocs.io/en/stable/
+		- Library https://github.com/gpiozero/gpiozero
+6. Environment stuff
+	- Figure out how to launch kivy in full screen.
+	- Figure out if we can use a config file for some of the default values within the project
+	- Figure out how to run 2 kivy apps at the same time in full screen on two different
+		screens at the same time.
+	- Check into the automatic keyboard popup for kivy text input windows.
+
+7. Clean up unused data module events
