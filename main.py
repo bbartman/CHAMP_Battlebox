@@ -205,7 +205,7 @@ class CountDownClockLabel(Label):
     Timer_idle = 0
     Timer_running = 1
     Timer_paused = 2
-    Timer_canceled = 3
+    Timer_cancelled = 3
     Timer_time_expired = 4
     seconds = NumericProperty(1)
     def __init__(self, **kwargs):
@@ -227,6 +227,12 @@ class CountDownClockLabel(Label):
             incr_crude_clock.text = "FINISHED"
         self.anim.bind(on_complete=finish_callback)
         self.anim.start(self)
+    
+    def pause(self):
+        pass
+    
+    def cancel(self):
+        pass
 
     def stop(self):
         print("Did we stop?")
@@ -241,88 +247,77 @@ class CountDownClockLabel(Label):
             if nextState == Timer_idle:
                 pass
             elif nextState == Timer_running:
+                self.dispatch("on_start")
+            elif self.state == Timer_paused:
+                self.dispatch("on_start")
+                self.dispatch("on_pause")
+            elif self.state == Timer_cancelled:
+                self.dispatch("on_start")
+                self.dispatch("on_cancelled")
+            elif self.state == Timer_time_expired:
+                self.dispatch("on_start")
+                self.dispatch("on_time_expired")
+            else:
+                raise Exception("Invalid State")
+        elif self.state == Timer_running:
+            if nextState == Timer_idle:
+                pass
+            elif nextState == Timer_running:
                 pass
             elif self.state == Timer_paused:
+                self.dispatch("on_pause")
+            elif self.state == Timer_cancelled:
+                self.dispatch("on_cancelled")
+            elif self.state == Timer_time_expired:
+                self.dispatch("on_time_expired")
+            else:
+                raise Exception("Invalid State")
+            pass
+        elif self.state == Timer_paused:
+            if nextState == Timer_idle:
                 pass
-            elif self.state == Timer_canceled:
+            elif nextState == Timer_running:
+                self.dispatch("on_resume")
+            elif self.state == Timer_paused:
                 pass
+            elif self.state == Timer_cancelled:
+                self.dispatch("on_cancelled")
+            elif self.state == Timer_time_expired:
+                self.dispatch("on_time_expired")
+            else:
+                raise Exception("Invalid State")
+            pass
+        elif self.state == Timer_cancelled:
+            if nextState == Timer_idle:
+                pass
+            elif nextState == Timer_running:
+                raise Exception ("Invalid cancelled -> running")
+            elif self.state == Timer_paused:
+                raise Exception ("Invalid cancelled -> paused")
+            elif self.state == Timer_cancelled:
+                pass
+            elif self.state == Timer_time_expired:
+                raise Exception ("Invalid cancelled -> expired")
+            else:
+                raise Exception("Invalid State")
+            pass
+        elif self.state == Timer_time_expired:
+            if nextState == Timer_idle:
+                pass
+            elif nextState == Timer_running:
+                raise Exception ("Invalid expired -> running")
+            elif self.state == Timer_paused:
+                raise Exception ("Invalid expired -> paused")
+            elif self.state == Timer_cancelled:
+                raise Exception ("Invalid expired -> cancelled")
             elif self.state == Timer_time_expired:
                 pass
             else:
                 raise Exception("Invalid State")
-        elif self.state == Timer_running:
-            #self.dispatch("on_start")
-            pass
-        elif self.state == Timer_paused:
-            #self.dispatch("on_start")
-            #self.dispatch("on_pause")
-            pass
-        elif self.state == Timer_canceled:
-            #self.dispatch("on_start")
-            #self.dispatch("on_cancelled")
-            pass
-        elif self.state == Timer_time_expired:
-            #self.dispatch("on_start")
-            #self.dispatch("on_time_expired")
             pass
         else:
             raise Exception("Invalid State")
-        #if nextState == Timer_idle:
-            
-        #elif nextState == Timer_running:
-        #    if self.state == Timer_idle:
-        #        pass
-        #    elif self.state == Timer_running:
-        #        pass
-        #    elif self.state == Timer_paused:
-        #        pass
-        #    elif self.state == Timer_canceled:
-        #        pass
-        #    elif self.state == Timer_time_expired:
-        #        pass
-        #    else:
-        #        raise Exception("Invalid State")
-        #elif nextState == Timer_paused:
-        #    if self.state == Timer_idle:
-        #        pass
-        #    elif self.state == Timer_running:
-        #        pass
-        #    elif self.state == Timer_paused:
-        #        pass
-        #    elif self.state == Timer_canceled:
-        #        pass
-        #    elif self.state == Timer_time_expired:
-        #        pass
-        #    else:
-        #        raise Exception("Invalid State")
-        #elif nextState == Timer_canceled:
-        #    if self.state == Timer_idle:
-        #        pass
-        #    elif self.state == Timer_running:
-        #        pass
-        #    elif self.state == Timer_paused:
-        #        pass
-        #    elif self.state == Timer_canceled:
-        #        pass
-        #    elif self.state == Timer_time_expired:
-        #        pass
-        #    else:
-        #        raise Exception("Invalid State")
-        #elif nextState == Timer_time_expired:
-        #    if self.state == Timer_idle:
-        #        pass
-        #    elif self.state == Timer_running:
-        #        pass
-        #    elif self.state == Timer_paused:
-        #        pass
-        #    elif self.state == Timer_canceled:
-        #        pass
-        #    elif self.state == Timer_time_expired:
-        #        pass
-        #    else:
-        #        raise Exception("Invalid State")
-        #else:
-        #    raise Exception("Invalid State")
+
     def on_timer_idle(self):
         pass
     
@@ -334,15 +329,12 @@ class CountDownClockLabel(Label):
     
     def on_resume(self):
         pass
-    
-    def on_scrubbed(self):
-        pass
 
     def on_cancelled(self):
-        pass
+        self._change_state(self, Timer_idle)
 
     def on_time_expired(self):
-        pass
+        self._change_state(self, Timer_idle)
 
 class VictoryScreen(Screen):
     victor_text = StringProperty()
