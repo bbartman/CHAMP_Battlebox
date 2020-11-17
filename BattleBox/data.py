@@ -1,12 +1,24 @@
 from kivy.event import EventDispatcher
-from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty
+from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty, NumericProperty
 
 class BBDeathMatchProp(EventDispatcher):
     duration = StringProperty("180")
-    player_one_name  = StringProperty("", allownone=False)
+    player_one_name = StringProperty("", allownone=False)
     player_two_name = StringProperty("", allownone=False)
     door_drop = StringProperty("Drop Both", allownone=False)
     door_drop_duration = StringProperty("180")
+
+    def get_player_one_name(self):
+        if self.player_one_name == "":
+            return "Player 1"
+        else:
+            return self.player_one_name
+
+    def get_player_two_name(self):
+        if self.player_two_name == "":
+            return "Player 2"
+        else:
+            return self.player_two_name
 
     def on_duration(self, instance, value):
         pass
@@ -23,12 +35,41 @@ class BBDeathMatchProp(EventDispatcher):
     def on_door_drop_duration(self, instance, value):
         pass
 
+    def reset(self):
+        self.door_drop = BBDeathMatchProp.door_drop.defaultvalue
+        self.duration = BBDeathMatchProp.duration.defaultvalue
+        self.player_one_name  = BBDeathMatchProp.player_one_name.defaultvalue
+        self.player_two_name= BBDeathMatchProp.player_two_name.defaultvalue
+        self.door_drop_duration = BBDeathMatchProp.door_drop_duration.defaultvalue
+
+    def dump(self):
+        print("Deathmatch info!")
+        print("  Duration = ", self.duration)
+        print("  Door drop = ", self.door_drop)
+        print("  Door drop duration = ", self.door_drop_duration)
+        print("  Player 1 = ", self.player_one_name)
+        print("  Player 2 = ", self.player_two_name)
+
+
+
 class BBSoccerMatchProp(EventDispatcher):
     duration = StringProperty("300")
     team_one_name  = StringProperty("", allownone=False)
     team_two_name = StringProperty("", allownone=False)
     points = StringProperty("5")
 
+
+    def get_team_one_name(self):
+        if self.team_one_name == "":
+            return "Team 1"
+        else:
+            return self.team_one_name 
+
+    def get_team_two_name(self):
+        if self.team_two_name== "":
+            return "Team 2"
+        else:
+            return self.team_two_name
     def on_duration(self, instance, value):
         pass
     
@@ -41,108 +82,50 @@ class BBSoccerMatchProp(EventDispatcher):
     def on_points(self, instance, value):
         pass
 
+    def reset(self):
+        self.duration = BBSoccerMatchProp.duration.defaultvalue
+        self.team_one_name  = BBSoccerMatchProp.team_one_name.defaultvalue
+        self.team_two_name = BBSoccerMatchProp.team_two_name.defaultvalue
+        self.points = BBSoccerMatchProp.points.defaultvalue
+
+
 class BBRunSoccerProp(EventDispatcher):
-    """"
-    Special events associated with this data model
-    """
-    __events__ = (
-        'on_team_one_scored',
-        'on_team_two_scored',
-        'on_team_one_wins',
-        'on_team_two_wins',
-        'on_team_one_wins',
-        'on_tie_game',
-        'on_match_reconfigured',
-        'on_match_scrubbed',
-        'on_match_paused',
-        'on_match_start',
-        'on_match_ended'
-    )
-
-    data = ObjectProperty(None, allownone=True)
-    def on_data(self, instance, value):
+    team_one_score = BoundedNumericProperty(0, min=0, max=1000, errorvalue=0)
+    team_two_score = BoundedNumericProperty(0, min=0, max=1000, errorvalue=0)
+    def on_team_one_score(self, instance, value):
         pass
-
-    def on_team_one_scored(self):
-        pass
-
-    def on_team_two_scored(self):
-        pass
-
-    def on_team_one_wins(self):
-        pass
-
-    def on_team_two_wins(self):
-        pass
-
-    def on_team_one_wins(self):
-        pass
-
-    def on_tie_game(self):
-        pass
-
-    def on_match_reconfigured(self):
-        pass
-
-    def on_match_scrubbed(self):
-        pass
-
-    def on_match_paused(self):
-        pass
-
-    def on_match_start(self):
-        pass
-
-    def on_match_ended(self):
+    def on_team_two_score(self, instance, value):
         pass
 
 class BBRunDeathMatchProp(EventDispatcher):
-    """"
-    Special events associated with this data model
-    """
-    __events__ = (
-        'on_player_one_wins',
-        'on_player_two_wins',
-        'on_match_scrubbed',
-        'on_match_start',
-        'on_match_ended'
-    )
+    STATE_not_running = 0
+    STATE_starting_match = 1
+    STATE_running_match = 2
+    STATE_paused = 3
+    STATE_doors_drop = 4
+    STATE_player_one_wins = 5
+    STATE_player_two_wins = 6
+    STATE_match_canceled = 7
+    STATE_pending_decision = 8
+    STATE_match_complete = 9
+    STATE_MAX = 10
+
+    state = NumericProperty(0)
+
     data = ObjectProperty(None, allownone=True)
+
     def on_data(self, instance, value):
         pass
 
-    def on_player_one_wins(self):
-        pass
-
-    def on_player_two_wins(self):
-        pass
-
-    def on_match_scrubbed(self):
-        pass
-    
-    def on_match_start(self):
-        pass
-
-    def on_match_ended(self):
+    def on_state(self, instance, value):
         pass
 
 class BBViewModelProp(EventDispatcher):
-    """"
-    Special events associated with this data model
-    """
-    __events__ = (
-        'on_clear',
-        'on_match_complete',
-        'on_start_match',
-        'on_finish_match'
-    )
-
-    current = ObjectProperty(None, allownone=True)
     death_match = BBDeathMatchProp()
     soccer_match = BBSoccerMatchProp()
     run_death_match = BBRunDeathMatchProp()
     run_soccer_match = BBRunSoccerProp()
-
+    
     # Default handlers for properties.
     def on_current(self, instance, value):
         pass
@@ -157,16 +140,4 @@ class BBViewModelProp(EventDispatcher):
         pass
 
     def on_run_soccer_match(self, instance, value):
-        pass
-
-    def on_clear(self):
-        pass
-
-    def on_match_complete(self):
-        pass
-
-    def on_start_match(self):
-        pass
-
-    def on_finish_match(self):
         pass
