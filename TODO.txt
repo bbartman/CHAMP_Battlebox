@@ -1,6 +1,6 @@
 Things to do:
 
-1. Add input verification to battle config menus.
+1. Add input verification to match config menus.
 2. Create match execution widget (or possibly not a widget)
 3. Match display timer.
 4. Create FSM for match timer so we can correctly emit the right events when the occur.
