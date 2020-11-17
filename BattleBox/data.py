@@ -66,7 +66,7 @@ class BBSoccerMatchProp(EventDispatcher):
             return self.team_one_name 
 
     def get_team_two_name(self):
-        if self.team_two_name== "":
+        if self.team_two_name == "":
             return "Team 2"
         else:
             return self.team_two_name
