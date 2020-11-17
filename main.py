@@ -213,7 +213,7 @@ class CountDownClockLabel(Label):
         self.register_event_type("on_start")
         self.register_event_type("on_pause")
         self.register_event_type("on_resume")
-        self.register_event_type("on_canceled")
+        self.register_event_type("on_cancelled")
         self.register_event_type("on_time_expired")
         self.state = CountDownClockLabel.Timer_idle
         super(CountDownClockLabel, self).__init__(**kwargs)
@@ -259,7 +259,7 @@ class CountDownClockLabel(Label):
             pass
         elif self.state == Timer_canceled:
             #self.dispatch("on_start")
-            #self.dispatch("on_canceled")
+            #self.dispatch("on_cancelled")
             pass
         elif self.state == Timer_time_expired:
             #self.dispatch("on_start")
@@ -323,49 +323,26 @@ class CountDownClockLabel(Label):
         #        raise Exception("Invalid State")
         #else:
         #    raise Exception("Invalid State")
-    #def on_match_start(self, instance, value):
-    #    pass
-
-    #def on_match_cancel(self, instance, value):
-    #    pass
-
-    #def on_match_time_elapsed(self, instance, value):
-    #    pass
-
-
-#class MatchTimer(CountDownClockLabel):
-    #def on_state(self, instance, value):
-    #    if value == MatchTimer.Timer_idle:
-    #        self.dispatch("on_timer_idle")
-    #    elif value == MatchTimer.Timer_running:
-    #        self.dispatch("on_match_start")
-    #    elif value == MatchTimer.Timer_paused:
-    #        self.dispatch("on_pause")
-    #    elif value == MatchTimer.Timer_paused:
-    #        self.dispatch("on_resume")
-
-    #    else:
-    #        raise Exception("Invalid state")
-    #def on_timer_idle(self):
-    #    pass
+    def on_timer_idle(self):
+        pass
     
-    #def on_match_start(self):
-    #    pass
+    def on_start(self):
+        pass
     
-    #def on_pause(self):
-    #    pass
+    def on_pause(self):
+        pass
     
-    #def on_resume(self):
-    #    pass
+    def on_resume(self):
+        pass
     
-    #def on_scrubbed(self):
-    #    pass
+    def on_scrubbed(self):
+        pass
 
-    #def on_cancelled_with_winner(self):
-    #    pass
+    def on_cancelled(self):
+        pass
 
-    #def on_time_expired(self):
-    #    pass
+    def on_time_expired(self):
+        pass
 
 class VictoryScreen(Screen):
     victor_text = StringProperty()
