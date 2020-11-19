@@ -11,6 +11,7 @@
     PlayersReadyScreen:
     VictoryScreen:
     ManualSoccerScoreAdjustmentScreen:
+    CountDownScreen:
 
 <MainScreen>:
     name: 'main'
@@ -182,7 +183,7 @@
                     size_hint: [1, .22]
                     on_release:
                         temp = app.root.get_screen('WaitForPlayers')
-                        temp.reset_screen("RunDeathmatch", "Player", dms.name)
+                        temp.reset_screen("RunDeathmatch", "Player", dms.name, "FIGHT!!!")
                         app.root.current = 'WaitForPlayers'
                         root.manager.transition.direction = 'left'
 
@@ -193,72 +194,6 @@
                     on_release:
                         dms.reset_screen(app)
                     font_size: 30
-
-<ManualSoccerScoreAdjustmentScreen>:
-    name:'AdjustScoreScreen'
-    data:app.data.run_soccer_match
-    smData:app.data.soccer_match
-    id:mssas
-    GridLayout:
-        cols:3
-        Label:
-            size_hint:[1, .1]
-            text: mssas.smData.get_team_one_name()
-            font_size:30
-        Label:
-            size_hint:[1, .1]
-            text: "-"
-            font_size:100
-        Label:
-            size_hint:[1, .1]
-            text: mssas.smData.get_team_two_name()
-            font_size:30
-        Label:
-            size_hint:[1, .7]
-            text: str(mssas.data.team_one_score)
-            font_size:50
-        Label:
-            size_hint:[1, .7]
-            text: "-"
-            font_size:100
-        Label:
-            size_hint:[1, .7]
-            text: str(mssas.data.team_two_score)
-            font_size:50
-        GridLayout:
-            size_hint:[1, .2]
-            cols:2
-            Button:
-                text: '+'
-                font_size:30
-                on_release:
-                    mssas.data.team_one_score += 1
-            Button:
-                text: '-'
-                font_size:30
-                on_release:
-                    mssas.data.team_one_score -= 1
-        Button:
-            size_hint:[1, .2]
-            text: "Done"
-            font_size:30
-            on_release:
-                app.root.current = 'RunSoccer'
-                root.manager.transition.direction = 'up'
-
-        GridLayout:
-            size_hint:[1, .2]
-            cols:2
-            Button:
-                text: '+'
-                font_size:30
-                on_release:
-                    mssas.data.team_two_score += 1
-            Button:
-                text: '-'
-                font_size:30
-                on_release:
-                    mssas.data.team_two_score -= 1
 
 
 
@@ -350,7 +285,7 @@
                         app.data.run_soccer_match.team_one_score = 0
                         app.data.run_soccer_match.team_two_score = 0
                         temp = app.root.get_screen('WaitForPlayers')
-                        temp.reset_screen("RunSoccer", "Team", sms.name)
+                        temp.reset_screen("RunSoccer", "Team", sms.name, "GO!!!")
                         app.root.current = 'WaitForPlayers'
                         root.manager.transition.direction = 'left'
                     font_size: 30
@@ -373,31 +308,45 @@
         root.manager.transition.direction = 'left'
     on_pre_enter:
         countDownClock.start(rss.smData.duration)
-    
+        subScrn.current = 'mainRunSoccerScreen'
+        rss.pause_play_button_text = "Pause\nGame"
     StackLayout:
+        size_hint: [1, 1]
         GridLayout:
-            size_hint: [1, .1]
+            size_hint: [1, .3]
             cols:3
             Label:    
                 text: "Soccer Match"
                 font_size: 30
+            Label:
+                text: ""
             CountDownClockLabel:
                 id: countDownClock
                 font_size:30
-        GridLayout:
-            size_hint:[1, .2]
-            cols:3
+                #on_timer_idle:
+                #    print("Called on timer idle")
+                on_pause:
+                    rss.pause_play_button_text = "Resume\nGame"
+                on_resume:
+                    rss.pause_play_button_text = "Pause\nGame"
+                #on_start:
+                #   print("Called on start")
+                #on_cancelled:
+                #    print("Called on cancelled")
+                on_time_expired:
+                    temp = app.root.get_screen('VictoryScreen')
+                    temp.reset_screen(rss.get_winning_team_name() + " \nhas won!!!", "main")
+                    app.root.current = 'VictoryScreen'
+                    root.manager.transition.direction = 'left'
             Label:
                 text: rss.smData.get_team_one_name()
                 font_size:30
             Label:
-
                 text: "-"
                 font_size:100
             Label:
                 text: rss.smData.get_team_two_name()
                 font_size:30
-
             Label:
                 text: str(rss.data.team_one_score)
                 font_size:50
@@ -407,60 +356,111 @@
             Label:
                 text: str(rss.data.team_two_score)
                 font_size:50
-        GridLayout:
-            size_hint: [1, .7]
-            rows:2
-            Button:
-                text: 'Team 1\nScored'
-                font_size: 30
-                on_release:
-                    rss.data.team_one_score += 1
+        RunSoccerSubScreenSelector:
+            size_hint:[1, .7]
+            id:subScrn
+            Screen:
+                name: "mainRunSoccerScreen"
 
-            Button:
-                text: 'Team 1\nWins'
-                font_size: 30
-                on_release:
-                    temp = app.root.get_screen('VictoryScreen')
-                    temp.reset_screen(rss.smData.get_team_one_name() + " \nhas won!!!", "main")
-                    app.root.current = 'VictoryScreen'
-                    root.manager.transition.direction = 'left'
+                GridLayout:
+                    rows:2
+                    Button:
+                        text: 'Team 1\nScored'
+                        font_size: 30
+                        on_release:
+                            rss.data.team_one_score += 1
 
-            Button:
-                text: 'Manually\nAdjust\nScore'
-                font_size: 30
-                on_release:
-                    app.root.current = 'AdjustScoreScreen'
-                    root.manager.transition.direction = 'down'
+                    Button:
+                        text: 'Team 1\nWins'
+                        font_size: 30
+                        on_release:
+                            temp = app.root.get_screen('VictoryScreen')
+                            temp.reset_screen(rss.smData.get_team_one_name() + " \nhas won!!!", "main")
+                            app.root.current = 'VictoryScreen'
+                            root.manager.transition.direction = 'left'
 
-            Label:
-                text:""
-            Button:
-                text: 'Team 2\nScored'
-                font_size: 30
-                on_release:
-                    rss.data.team_two_score += 1
+                    Button:
+                        text: 'Manually\nAdjust\nScore'
+                        font_size: 30
+                        on_release:
+                            subScrn.current = 'AdjustScoreScreen'
+                            subScrn.transition.direction = 'down'
+
+                    Label:
+                        text:""
+                    Button:
+                        text: 'Team 2\nScored'
+                        font_size: 30
+                        on_release:
+                            rss.data.team_two_score += 1
         
-            Button:
-                text: 'Team 2\nWins' 
-                font_size: 30
-                on_release:
-                    temp = app.root.get_screen('VictoryScreen')
-                    temp.reset_screen(rss.smData.get_team_two_name() + " \nhas won!!!", "main")
-                    app.root.current = 'VictoryScreen'
-                    root.manager.transition.direction = 'left'
+                    Button:
+                        text: 'Team 2\nWins' 
+                        font_size: 30
+                        on_release:
+                            temp = app.root.get_screen('VictoryScreen')
+                            temp.reset_screen(rss.smData.get_team_two_name() + " \nhas won!!!", "main")
+                            app.root.current = 'VictoryScreen'
+                            root.manager.transition.direction = 'left'
 
-            Button:
-                text: 'Pause\nGame'
-                font_size: 30
+                    Button:
+                        id:pausePlayButton
+                        text: rss.pause_play_button_text
+                        font_size: 30
+                        on_release:
+                            rss.play_pause_pressed()
 
-            Button:
-                text: 'Scrub Match'
-                on_release:
-                    app.root.current = 'main'
-                    root.manager.transition.direction = 'left'
-                    app.data.soccer_match.reset()
-                    countDownClock.stop()
-                font_size: 30
+
+                    Button:
+                        text: 'Scrub Match'
+                        on_release:
+                            app.root.current = 'main'
+                            root.manager.transition.direction = 'left'
+                            app.data.soccer_match.reset()
+                            countDownClock.cancel()
+                        font_size: 30
+            ManualSoccerScoreAdjustmentScreen:
+                name:'AdjustScoreScreen'
+                data:app.data.run_soccer_match
+                smData:app.data.soccer_match
+                id:mssas
+                GridLayout:
+                    cols:3
+                    GridLayout:
+                        cols:2
+                        Button:
+                            text: '+'
+                            font_size:30
+                            on_release:
+                                mssas.data.team_one_score += 1
+                        Button:
+                            text: '-'
+                            font_size:30
+                            on_release:
+                                mssas.data.team_one_score -= 1
+                    Button:
+                        size_hint:[1, .2]
+                        text: "Done"
+                        font_size:30
+                        on_release:
+                            subScrn.current = 'mainRunSoccerScreen'
+                            subScrn.transition.direction = 'up'
+
+                    GridLayout:
+                        size_hint:[1, .2]
+                        cols:2
+                        Button:
+                            text: '+'
+                            font_size:30
+                            on_release:
+                                mssas.data.team_two_score += 1
+                        Button:
+                            text: '-'
+                            font_size:30
+                            on_release:
+                                mssas.data.team_two_score -= 1
+
+
 
 
 <RunDeathmatchScreen>
@@ -470,14 +470,14 @@
     id: rdms
 
     on_player_one_wins:
-        countDownClock.stop()
+        countDownClock.cancel()
         temp = app.root.get_screen('VictoryScreen')
         temp.reset_screen(rdms.dmData.get_player_one_name() + " \nhas won!!!", "main")
         app.root.current = 'VictoryScreen'
         root.manager.transition.direction = 'left'
 
     on_player_two_wins:
-        countDownClock.stop()
+        countDownClock.cancel()
         temp = app.root.get_screen('VictoryScreen')
         temp.reset_screen(rdms.dmData.get_player_two_name() + " \nhas won!!!", "main")
         app.root.current = 'VictoryScreen'
@@ -553,7 +553,9 @@
     name: 'WaitForPlayers'
     id:wfp
     on_everyone_ready:
-        app.root.current = self.next_screen_after_ready
+        temp = app.root.get_screen('CountDownScreen')
+        temp.reset_screen(self.next_screen_after_ready, wfp.previous_screen, wfp.count_down_word)
+        app.root.current = temp.name
         root.manager.transition.direction = 'left'
     on_leave:
         p1_rdy_btn.disabled = False
@@ -584,7 +586,7 @@
             text: 'Reconfigure'
             size_hint:[1, .1]
             on_release:
-                app.root.current = wfp.previous_screen 
+                app.root.current = wfp.previous_screen
                 root.manager.transition.direction = 'right'
             font_size: 30
 
@@ -603,3 +605,26 @@
             on_release:
                 app.root.current = vs.next_screen
                 root.manager.transition.direction = 'left'
+
+<CountDownScreen>
+    name: "CountDownScreen"
+    id: cds
+    on_pre_enter:
+        ft.start()
+    StackLayout:
+        size_hint: [1, 1]
+        FadeTicker:
+            id:ft
+            size_hint: [1, .8]
+            font_size:150
+            final_word: cds.final_word
+            on_ready:
+                app.root.current = cds.next
+                root.manager.transition.direction = 'left'
+        Button:
+            size_hint: [1, .2]
+            text: "Cancel"
+            on_press:
+                ft.cancel()
+                app.root.current = cds.previous
+                root.manager.transition.direction = 'right'

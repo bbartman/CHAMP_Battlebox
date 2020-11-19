@@ -133,8 +133,11 @@ class ManualSoccerScoreAdjustmentScreen(Screen):
 
 class RunSoccerScreen(Screen):
     data = ObjectProperty(None, allownone=False)
+    PauseGameStr = "Pause\nGame"
+    ResumeGameStr = "Resume\nGame"
+    pause_play_button_text = StringProperty("Pause\nGame")
     def __init__(self, **kwargs): 
-        self.register_event_type("on_max_score_reached", )
+        self.register_event_type("on_max_score_reached")
         #self.register_event_type("on_team_one_scored")
         #self.register_event_type("on_team_two_scored")
         super(RunSoccerScreen, self).__init__(**kwargs)
@@ -142,6 +145,16 @@ class RunSoccerScreen(Screen):
     def on_data(self, instance, value):
         self.data.bind(team_one_score=self.on_team_one_scored,
                        team_two_score=self.on_team_one_scored)
+    
+    def on_pause_play_button_text(self, instance, value):
+        pass
+    def play_pause_pressed(self):
+        if self.pause_play_button_text == RunSoccerScreen.PauseGameStr:
+            self.ids.countDownClock.pause()
+
+        else:
+            self.ids.countDownClock.resume()
+            self.pause_play_button_text = RunSoccerScreen.PauseGameStr
 
     def on_max_score_reached(self):
         pass
@@ -162,6 +175,9 @@ class RunSoccerScreen(Screen):
         else:
             return self.smData.get_team_two_name()
 
+class RunSoccerSubScreenSelector(ScreenManager):
+    pass
+
 class DMDecisionScreen(Screen):
     pass
 
@@ -171,15 +187,18 @@ class PlayersReadyScreen(Screen):
     next_screen_after_ready = StringProperty()
     player_or_team = StringProperty("Player")
     previous_screen = StringProperty()
+    count_down_word = StringProperty()
+
     def __init__(self, **kwargs): 
         self.register_event_type("on_everyone_ready")
         super(PlayersReadyScreen, self).__init__(**kwargs)
 
-    def reset_screen(self, nextScreen, POrT, previousScreen):
+    def reset_screen(self, nextScreen, POrT, previousScreen, word):
         self.players_ready = 0
         self.next_screen_after_ready = nextScreen
         self.player_or_team = POrT
         self.previous_screen = previousScreen
+        self.count_down_word = word
 
     def on_players_ready(self, instance, value):
         if value == 2:
@@ -191,17 +210,18 @@ class PlayersReadyScreen(Screen):
     def on_everyone_ready(self):
         pass
 
+    def on_count_down_word(self, instance, value):
+        pass
+
 
 class ScreenManagement(ScreenManager):
     pass
 
+
 class CustomDropDown(DropDown): 
     pass
 
-
-
 class CountDownClockLabel(Label):
-
     Timer_idle = 0
     Timer_running = 1
     Timer_paused = 2
@@ -218,105 +238,130 @@ class CountDownClockLabel(Label):
         self.state = CountDownClockLabel.Timer_idle
         super(CountDownClockLabel, self).__init__(**kwargs)
 
+
+    def finish_callback(self, animation, incr_crude_clock):
+        incr_crude_clock.text = "FINISHED"
+        self.dispatch("on_time_expired")
+
     def start(self, execTime):
         Animation.cancel_all(self)  # stop any current animations
         self.seconds = execTime
         self.on_seconds(None, None)
         self.anim = Animation(seconds=0, duration=self.seconds)
-        def finish_callback(animation, incr_crude_clock):
-            incr_crude_clock.text = "FINISHED"
-        self.anim.bind(on_complete=finish_callback)
+        self.anim.bind(on_complete=self.finish_callback)
+        self._change_state(CountDownClockLabel.Timer_running)
         self.anim.start(self)
     
     def pause(self):
-        pass
+        self._change_state(CountDownClockLabel.Timer_paused)
+        Animation.cancel_all(self)
+
+    def resume(self):
+        self._change_state(CountDownClockLabel.Timer_running)
+        Animation.cancel_all(self)
+        self.on_seconds(None, None)
+        self.anim = Animation(seconds=0, duration=self.seconds)
+        self.anim.bind(on_complete=self.finish_callback)
+        self._change_state(CountDownClockLabel.Timer_running)
+        self.anim.start(self)
     
     def cancel(self):
-        pass
-
-    def stop(self):
-        print("Did we stop?")
+        self._change_state(CountDownClockLabel.Timer_cancelled)
         Animation.cancel_all(self)
-        print("Current value of seconds = ", self.seconds)
+        self.seconds = 0
 
     def on_seconds(self, instance, value):
         self.text = str(round(self.seconds, 1))
 
     def _change_state(self, nextState):
-        if self.state == Timer_idle:
-            if nextState == Timer_idle:
-                pass
-            elif nextState == Timer_running:
+        if self.state == CountDownClockLabel.Timer_idle:
+            if nextState == CountDownClockLabel.Timer_idle:
+                self.state = nextState
+            elif nextState == CountDownClockLabel.Timer_running:
+                self.state = nextState
                 self.dispatch("on_start")
-            elif self.state == Timer_paused:
+            elif nextState == CountDownClockLabel.Timer_paused:
+                self.state = nextState
                 self.dispatch("on_start")
                 self.dispatch("on_pause")
-            elif self.state == Timer_cancelled:
+            elif nextState == CountDownClockLabel.Timer_cancelled:
+                self.state = nextState
                 self.dispatch("on_start")
                 self.dispatch("on_cancelled")
-            elif self.state == Timer_time_expired:
+            elif nextState == CountDownClockLabel.Timer_time_expired:
+                self.state = nextState
                 self.dispatch("on_start")
                 self.dispatch("on_time_expired")
             else:
-                raise Exception("Invalid State")
-        elif self.state == Timer_running:
-            if nextState == Timer_idle:
-                pass
-            elif nextState == Timer_running:
-                pass
-            elif self.state == Timer_paused:
+                raise Exception("Invalid State from idle -> {0}".format(nextState))
+        elif self.state == CountDownClockLabel.Timer_running:
+            if nextState == CountDownClockLabel.Timer_idle:
+                self.state = nextState
+            elif nextState == CountDownClockLabel.Timer_running:
+                self.state = nextState
+            elif nextState == CountDownClockLabel.Timer_paused:
+                self.state = nextState
                 self.dispatch("on_pause")
-            elif self.state == Timer_cancelled:
+            elif nextState == CountDownClockLabel.Timer_cancelled:
+                self.state = nextState
                 self.dispatch("on_cancelled")
-            elif self.state == Timer_time_expired:
+            elif nextState == CountDownClockLabel.Timer_time_expired:
+                self.state = nextState
                 self.dispatch("on_time_expired")
             else:
-                raise Exception("Invalid State")
+                raise Exception("Invalid State from running -> {0}".format(nextState))
             pass
-        elif self.state == Timer_paused:
-            if nextState == Timer_idle:
-                pass
-            elif nextState == Timer_running:
+        elif self.state == CountDownClockLabel.Timer_paused:
+            if nextState == CountDownClockLabel.Timer_idle:
+                self.state = nextState
+            elif nextState == CountDownClockLabel.Timer_running:
+                self.state = nextState
                 self.dispatch("on_resume")
-            elif self.state == Timer_paused:
-                pass
-            elif self.state == Timer_cancelled:
+            elif nextState == CountDownClockLabel.Timer_paused:
+                self.state = nextState
+            elif nextState == CountDownClockLabel.Timer_cancelled:
+                self.state = nextState
                 self.dispatch("on_cancelled")
-            elif self.state == Timer_time_expired:
+            elif nextState == CountDownClockLabel.Timer_time_expired:
+                self.state = nextState
                 self.dispatch("on_time_expired")
             else:
-                raise Exception("Invalid State")
+                raise Exception("Invalid State from paused -> {0}".format(nextState))
             pass
-        elif self.state == Timer_cancelled:
-            if nextState == Timer_idle:
-                pass
-            elif nextState == Timer_running:
+        elif self.state == CountDownClockLabel.Timer_cancelled:
+
+            if nextState == CountDownClockLabel.Timer_idle:
+                self.state = nextState
+                self.dispatch("on_timer_idle")
+            elif nextState == CountDownClockLabel.Timer_running:
                 raise Exception ("Invalid cancelled -> running")
-            elif self.state == Timer_paused:
+            elif nextState == CountDownClockLabel.Timer_paused:
                 raise Exception ("Invalid cancelled -> paused")
-            elif self.state == Timer_cancelled:
-                pass
-            elif self.state == Timer_time_expired:
+            elif nextState == CountDownClockLabel.Timer_cancelled:
+                self.state = nextState
+            elif nextState == CountDownClockLabel.Timer_time_expired:
                 raise Exception ("Invalid cancelled -> expired")
             else:
-                raise Exception("Invalid State")
+                raise Exception("Invalid State from cancelled -> {0}".format(nextState))
             pass
-        elif self.state == Timer_time_expired:
-            if nextState == Timer_idle:
-                pass
-            elif nextState == Timer_running:
+        elif self.state == CountDownClockLabel.Timer_time_expired:
+            if nextState == CountDownClockLabel.Timer_idle:
+                self.state = nextState
+                self.dispatch("on_timer_idle")
+            elif nextState == CountDownClockLabel.Timer_running:
                 raise Exception ("Invalid expired -> running")
-            elif self.state == Timer_paused:
+            elif nextState == CountDownClockLabel.Timer_paused:
                 raise Exception ("Invalid expired -> paused")
-            elif self.state == Timer_cancelled:
+            elif nextState == CountDownClockLabel.Timer_cancelled:
                 raise Exception ("Invalid expired -> cancelled")
-            elif self.state == Timer_time_expired:
-                pass
+            elif nextState == CountDownClockLabel.Timer_time_expired:
+                self.state = nextState
             else:
-                raise Exception("Invalid State")
+                raise Exception("Invalid State from time expired -> {0}".format(nextState))
             pass
         else:
-            raise Exception("Invalid State")
+            raise Exception("Invalid current state = {0}".fomrat(self.state))
+        #self.state = nextState
 
     def on_timer_idle(self):
         pass
@@ -331,10 +376,10 @@ class CountDownClockLabel(Label):
         pass
 
     def on_cancelled(self):
-        self._change_state(self, Timer_idle)
+        self._change_state(CountDownClockLabel.Timer_idle)
 
     def on_time_expired(self):
-        self._change_state(self, Timer_idle)
+        self._change_state(CountDownClockLabel.Timer_idle)
 
 class VictoryScreen(Screen):
     victor_text = StringProperty()
@@ -345,6 +390,26 @@ class VictoryScreen(Screen):
         self.next_screen = NextScreen
 
     def on_enter(self):
+        pass
+
+
+class CountDownScreen(Screen):
+    next = StringProperty()
+    previous = StringProperty()
+    final_word = StringProperty()
+
+    def reset_screen(self, nextScreen, previousScreen, finalWord):
+        self.next = nextScreen
+        self.previous = previousScreen
+        self.final_word = finalWord
+
+    def on_next(self, instance, value):
+        pass
+
+    def on_previous(self, instance, value):
+        pass
+
+    def on_final_word(self, instance, value):
         pass
 
 class DropdownDemo(GridLayout): 
@@ -368,6 +433,51 @@ class DropdownDemo(GridLayout):
         self.dropdown.bind(on_select = update_main_button)
 
     def on_select(self, instance, x):
+        pass
+
+class FadeTicker(Label):
+    seconds = NumericProperty(3)
+    final_word = StringProperty("FIGHT!!!")
+
+    def __init__(self, **kwargs): 
+        self.register_event_type("on_ready")
+        super(FadeTicker, self).__init__(**kwargs)
+
+    def finish_callback_1(self, animation, Ticker):
+        self._do_animation(2, self.finish_callback_2)
+
+    def finish_callback_2(self, animation, Ticker):
+        self._do_animation(1, self.finish_callback_3)
+
+    def finish_callback_3(self, animation, Ticker):
+        Ticker.text = self.final_word
+        self.color = [1,1,1,1]
+        self.anim = Animation(color=[1,1,1,1], duration=0.3)
+        self.anim.bind(on_complete=self.complete_count_down)
+        self.anim.start(self)
+
+    def complete_count_down(self, animation, Ticker):
+        self.dispatch("on_ready")
+
+    def _do_animation(self, nextValue, nextCB):
+        self.seconds = nextValue
+        self.color = [1,1,1,0]
+        self.anim = Animation(color=[1,1,1,0.7], duration=1.0)
+        self.on_seconds(None, None)
+        self.anim.bind(on_complete=nextCB)
+        self.anim.start(self)
+
+    def start(self):
+        Animation.cancel_all(self)
+        self._do_animation(3, self.finish_callback_1)
+
+    def on_seconds(self, instance, value):
+        self.text = str(int(self.seconds))
+
+    def cancel(self):
+        Animation.cancel_all(self)
+        
+    def on_ready(self):
         pass
 
 
