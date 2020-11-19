@@ -10,7 +10,9 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty, NumericProperty
 from BattleBox.data import BBViewModelProp, BBDeathMatchProp, BBSoccerMatchProp, BBRunDeathMatchProp
+from kivy.config import Config
 
+Config.read("BattleBox.ini")
 class MainScreen(Screen):
     pass
 
@@ -240,11 +242,13 @@ class CountDownClockLabel(Label):
 
 
     def finish_callback(self, animation, incr_crude_clock):
+        self.color = [1,1,1,0]
         incr_crude_clock.text = "FINISHED"
         self.dispatch("on_time_expired")
 
     def start(self, execTime):
         Animation.cancel_all(self)  # stop any current animations
+        self.color = [1,1,1,1]
         self.seconds = execTime
         self.on_seconds(None, None)
         self.anim = Animation(seconds=0, duration=self.seconds)
@@ -255,10 +259,17 @@ class CountDownClockLabel(Label):
     def pause(self):
         self._change_state(CountDownClockLabel.Timer_paused)
         Animation.cancel_all(self)
+        self.color = [1,1,1,0]
+        #self.anim = Animation(color=[1,1,1,1], duration=1.0)
+        self.anim = Animation(color=[1,1,1,0], duration=0.1) + Animation(color=[1,1,1,0], duration=0.5)
+        self.anim += Animation(color=[1,1,1,1], duration=0.1) + Animation(color=[1,1,1,1], duration=0.5)
+        self.anim.repeat = True
+        self.anim.start(self)
 
     def resume(self):
         self._change_state(CountDownClockLabel.Timer_running)
         Animation.cancel_all(self)
+        self.color = [1,1,1,1]
         self.on_seconds(None, None)
         self.anim = Animation(seconds=0, duration=self.seconds)
         self.anim.bind(on_complete=self.finish_callback)

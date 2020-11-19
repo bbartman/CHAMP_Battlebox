@@ -24,18 +24,20 @@
 
         BoxLayout:
             Button:
-                on_release:
-                    app.root.current = 'deathmatch'
-                    root.manager.transition.direction = 'left'
                 text: 'Deathmatch'
                 font_size: 24
+                on_release:
+                    app.data.death_match.reset()
+                    app.root.current = 'deathmatch'
+                    root.manager.transition.direction = 'left'
 
             Button:
-                on_release:
-                    app.root.current = 'soccer'
-                    root.manager.transition.direction = 'left'
                 text: 'Soccer'
                 font_size: 24
+                on_release:
+                    app.data.soccer_match.reset()
+                    app.root.current = 'soccer'
+                    root.manager.transition.direction = 'left'
 
 <CustomDropDown>:
     Button: 

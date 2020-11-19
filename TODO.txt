@@ -17,3 +17,4 @@ Things to do:
 7. Clean up unused data module events
 8. Make sure timer cancellation works for death match the same as it does for soccer.
 9. Implement death match timer
+10. Make timer blink when paused.
