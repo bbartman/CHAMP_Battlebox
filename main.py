@@ -3,23 +3,45 @@ from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.widget import Widget
+from kivy.uix.textinput import TextInput
 from kivy.uix.dropdown import DropDown
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty, NumericProperty
 from BattleBox.data import BBViewModelProp, BBDeathMatchProp, BBSoccerMatchProp, BBRunDeathMatchProp
 from kivy.config import Config
+import platform, re
+
+from gpiozero import Device
+if platform.system() != 'Windows':
+    Device.pin_factory = MockFactory()
 
 Config.read("BattleBox.ini")
+
 class MainScreen(Screen):
     pass
+
+class UIntInput(TextInput):
+    pat = re.compile('[^0-9]*')
+    def insert_text(self, substring, from_undo=False):
+        s = re.sub(self.pat, '', substring)
+        return super(UIntInput, self).insert_text(s, from_undo=from_undo)
+    def on_text(self, instance, value):
+        ''' This makes sure the value is never empty and we always have something
+        even if it's a zero
+        '''
+        if value == "":
+            self.text = "0"
 
 class DeathmatchScreen(Screen):
     def reset_screen(self, app):
         app.data.death_match.reset()
         self.ids.dm_door_drop.do_update_main_button(app.data.death_match.door_drop)
+    
+    data = ObjectProperty(None)
 
     def __init__(self, **kwargs): 
         super(DeathmatchScreen, self).__init__(**kwargs)
@@ -27,96 +49,62 @@ class DeathmatchScreen(Screen):
     def drop_down_changed(self, instance, x):
         if x == 'Drop Both':
             self.ids.dm_door_drop_duration.disabled = False
+        elif x == 'Never drop doors':
+            self.ids.dm_door_drop_duration.disabled = True
         elif x == 'Doors Always Open':
             self.ids.dm_door_drop_duration.disabled = True
-        elif x == 'Drop Red Player Door Only':
+        elif x == 'Drop Player 1 Door Only':
             self.ids.dm_door_drop_duration.disabled = False
-        elif x == 'Drop Blue Player Door Only':
+        elif x == 'Drop Player 2 Door Only':
             self.ids.dm_door_drop_duration.disabled = False
         elif x == 'Drop Random Door':
             self.ids.dm_door_drop_duration.disabled = False
 
-class RunDeathmatchScreen(Screen):
-    events = [
-        'on_not_running',
-        'on_starting_match',
-        'on_running_match',
-        'on_match_paused',
-        'on_door_drop',
-        'on_player_one_wins',
-        'on_player_two_wins',
-        'on_match_scrubbed',
-        'on_pending_decision',
-        'on_match_complete'
-    ]
+    def on_battle_validation(self, app, root):
+        if self.data.duration == 0:
+            create_popup("death match", "Match duration cannot be zero")
+            return
 
+        if not self.ids.dm_door_drop_duration.disabled:
+            if self.data.door_drop_duration == 0:
+                create_popup("death match", "Door drop duration cannot be zero.\n\nIf you want them open all of the time please select that option from the drop down.")
+                return
+
+            if self.data.door_drop_duration >= self.data.duration:
+                create_popup("death match", "Door drop duration must be less then the match duration.")
+                return
+        
+        self.data.player_one_name.strip()
+        if self.data.player_one_name != "":
+            if len(self.data.player_one_name) >= 20:
+                create_popup("death match", "Player one's name must be less then 20 charactres")
+                return
+
+        self.data.player_two_name.strip()
+        if self.data.player_two_name != "":
+            if len(self.data.player_two_name) >= 20:
+                create_popup("death match", "Player two's name must be less then 20 charactres")
+                return
+
+        if self.data.player_one_name != "" and self.data.player_two_name != "":
+            if self.data.player_one_name == self.data.player_two_name:
+                create_popup("death match", "Players one and two cannot both have the same names")
+                return
+
+        temp = app.root.get_screen('WaitForPlayers')
+        temp.reset_screen("RunDeathmatch", "Player", self.name, "FIGHT!!!")
+        app.root.current = 'WaitForPlayers'
+        root.manager.transition.direction = 'left'
+
+class RunDeathmatchScreen(Screen):
     data = ObjectProperty(None, allownone=True)
 
     def __init__(self, **kwargs): 
-        for eventName in RunDeathmatchScreen.events:
-            self.register_event_type(eventName)
         super(RunDeathmatchScreen, self).__init__(**kwargs)
 
     def on_data(self, instance, value):
         '''This is called once we have initialzied all of the other widgets 
         and we are setting data for the first and only time'''
-        self.data.bind(state = self.on_state)
-
-    def on_state(self, instance, value):
-        if value == BBRunDeathMatchProp.STATE_not_running:
-            self.dispatch("on_not_running")
-        elif value == BBRunDeathMatchProp.STATE_starting_match:
-            self.dispatch("on_starting_match")
-        elif value == BBRunDeathMatchProp.STATE_running_match:
-            self.dispatch("on_running_match")
-        elif value == BBRunDeathMatchProp.STATE_paused:
-            self.dispatch("on_match_paused")
-        elif value == BBRunDeathMatchProp.STATE_doors_drop:
-            self.dispatch("on_door_drop")
-        elif value == BBRunDeathMatchProp.STATE_player_one_wins:
-            self.dispatch("on_player_one_wins")
-        elif value == BBRunDeathMatchProp.STATE_player_two_wins:
-            self.dispatch("on_player_two_wins")
-        elif value == BBRunDeathMatchProp.STATE_match_canceled:
-            self.dispatch("on_match_scrubbed")
-        elif value == BBRunDeathMatchProp.STATE_pending_decision:
-            self.dispatch("on_pending_decision")
-        elif value == BBRunDeathMatchProp.STATE_match_complete:
-            self.dispatch("on_match_complete")
-        else:
-            raise Exception("Invalid state")
-
-    def on_not_running(self):
-        pass
-
-    def on_starting_match(self):
-        pass
-
-    def on_running_match(self):
-        pass
-
-    def on_match_paused(self):
-        pass
-
-    def on_door_drop(self):
-        pass
-
-    def on_player_one_wins(self):
-        pass
-
-    def on_player_two_wins(self):
-        pass
-
-    def on_match_scrubbed(self):
-        pass
-
-    def on_pending_decision(self):
-        pass
-
-    def on_match_reconfigured(self):
-        self.data.state = BBRunDeathMatchProp.STATE_not_running
-
-    def on_match_complete(self):
         pass
 
     def on_pre_enter(self):
@@ -125,9 +113,57 @@ class RunDeathmatchScreen(Screen):
     def on_leave(self):
         pass
 
+
+class ErrorMessagePopUp(Popup):
+    message = StringProperty("")
+    def __init__(self, **kwargs):
+        super(ErrorMessagePopUp, self).__init__(**kwargs)
+
+def create_popup(screenName, msg):
+    ErrorMessagePopUp(title='Invalid {0} configuration'.format(screenName),
+        message=msg,
+        size_hint=(None, None), size=(400, 400),
+        auto_dismiss=False).open()
+
 class SoccerScreen(Screen):
+    data = ObjectProperty(None)
+    def __init__(self, **kwargs):
+        super(SoccerScreen, self).__init__(**kwargs)
+        
     def reset_screen(self, app):
         app.data.soccer_match.reset()
+
+    def on_match_validation(self, app, root):
+        if self.data.duration == 0:
+            create_popup("soccer match", "Match duration cannot be zero")
+            return
+
+        if self.data.points == 0:
+            create_popup("soccer match", "Number of match points cannot be zero.")
+            return
+
+        self.data.team_one_name.strip()
+        if self.data.team_one_name != "":
+            if len(self.data.team_one_name) >= 20:
+                create_popup("soccermatch", "Player one's name must be less then 20 charactres")
+                return
+
+        self.data.team_two_name.strip()
+        if self.data.team_two_name != "":
+            if len(self.data.team_two_name) >= 20:
+                create_popup("soccer match", "Player two's name must be less then 20 charactres")
+                return
+
+        if self.data.team_one_name != "" and self.data.team_two_name != "":
+            if self.data.team_one_name == self.data.team_two_name:
+                create_popup("soccer match", "teams one and two cannot both have the same names")
+                return
+        app.data.run_soccer_match.team_one_score = 0
+        app.data.run_soccer_match.team_two_score = 0
+        temp = app.root.get_screen('WaitForPlayers')
+        temp.reset_screen("RunSoccer", "Team", self.name, "GO!!!")
+        app.root.current = 'WaitForPlayers'
+        root.manager.transition.direction = 'left'
 
 
 class ManualSoccerScoreAdjustmentScreen(Screen):
@@ -138,10 +174,10 @@ class RunSoccerScreen(Screen):
     PauseGameStr = "Pause\nGame"
     ResumeGameStr = "Resume\nGame"
     pause_play_button_text = StringProperty("Pause\nGame")
+
+    
     def __init__(self, **kwargs): 
         self.register_event_type("on_max_score_reached")
-        #self.register_event_type("on_team_one_scored")
-        #self.register_event_type("on_team_two_scored")
         super(RunSoccerScreen, self).__init__(**kwargs)
 
     def on_data(self, instance, value):
@@ -153,7 +189,6 @@ class RunSoccerScreen(Screen):
     def play_pause_pressed(self):
         if self.pause_play_button_text == RunSoccerScreen.PauseGameStr:
             self.ids.countDownClock.pause()
-
         else:
             self.ids.countDownClock.resume()
             self.pause_play_button_text = RunSoccerScreen.PauseGameStr
@@ -162,10 +197,15 @@ class RunSoccerScreen(Screen):
         pass
 
     def on_team_one_scored(self, instance, value):
+        if self.pause_play_button_text == RunSoccerScreen.PauseGameStr:
+            self.ids.countDownClock.pause()
+
         if int(value) == int(self.smData.points):
             self.dispatch("on_max_score_reached")
 
     def on_team_two_scored(self, instance, value):
+        if self.pause_play_button_text == RunSoccerScreen.PauseGameStr:
+            self.ids.countDownClock.pause()
         if int(value) == int(self.smData.points):
             self.dispatch("on_max_score_reached")
 
@@ -260,7 +300,6 @@ class CountDownClockLabel(Label):
         self._change_state(CountDownClockLabel.Timer_paused)
         Animation.cancel_all(self)
         self.color = [1,1,1,0]
-        #self.anim = Animation(color=[1,1,1,1], duration=1.0)
         self.anim = Animation(color=[1,1,1,0], duration=0.1) + Animation(color=[1,1,1,0], duration=0.5)
         self.anim += Animation(color=[1,1,1,1], duration=0.1) + Animation(color=[1,1,1,1], duration=0.5)
         self.anim.repeat = True
@@ -494,7 +533,11 @@ class FadeTicker(Label):
 
 class MainApp(App):
     data = BBViewModelProp()
-
+    def parse_int_or_zero(self, stringValue):
+        try:
+            return int(stringValue)
+        except:
+            return 0
     def __init__(self, **kwargs): 
         super(MainApp, self).__init__(**kwargs)
 
@@ -503,4 +546,4 @@ class MainApp(App):
         return root_widget
 
 if __name__ == '__main__':
-    MainApp().run() 
+    MainApp().run()

@@ -2,11 +2,11 @@ from kivy.event import EventDispatcher
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty, NumericProperty
 
 class BBDeathMatchProp(EventDispatcher):
-    duration = StringProperty("180")
+    duration = NumericProperty(180)
     player_one_name = StringProperty("", allownone=False)
     player_two_name = StringProperty("", allownone=False)
     door_drop = StringProperty("Drop Both", allownone=False)
-    door_drop_duration = StringProperty("180")
+    door_drop_duration = NumericProperty(120)
 
     def get_player_one_name(self):
         if self.player_one_name == "":
@@ -53,10 +53,10 @@ class BBDeathMatchProp(EventDispatcher):
 
 
 class BBSoccerMatchProp(EventDispatcher):
-    duration = StringProperty("300")
+    duration = NumericProperty(300)
     team_one_name  = StringProperty("", allownone=False)
     team_two_name = StringProperty("", allownone=False)
-    points = StringProperty("5")
+    points = NumericProperty(5)
 
 
     def get_team_one_name(self):
@@ -98,26 +98,9 @@ class BBRunSoccerProp(EventDispatcher):
         pass
 
 class BBRunDeathMatchProp(EventDispatcher):
-    STATE_not_running = 0
-    STATE_starting_match = 1
-    STATE_running_match = 2
-    STATE_paused = 3
-    STATE_doors_drop = 4
-    STATE_player_one_wins = 5
-    STATE_player_two_wins = 6
-    STATE_match_canceled = 7
-    STATE_pending_decision = 8
-    STATE_match_complete = 9
-    STATE_MAX = 10
-
-    state = NumericProperty(0)
-
     data = ObjectProperty(None, allownone=True)
 
     def on_data(self, instance, value):
-        pass
-
-    def on_state(self, instance, value):
         pass
 
 class BBViewModelProp(EventDispatcher):

@@ -2,3 +2,4 @@ env/
 .vs/
 env1/
 /BattleBox/__pycache__
+__pycache__/

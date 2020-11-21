@@ -1,5 +1,6 @@
 #:import BBDeathMatchProp BattleBox.data.BBDeathMatchProp
 #:import BBRunDeathMatchProp BattleBox.data.BBRunDeathMatchProp
+#:import Factory kivy.factory.Factory
 
 <ScreenManagement>:
     MainScreen:
@@ -45,37 +46,44 @@
         size_hint_y: None
         height: 80
         on_release:
-            root.select('Drop Both')
+            root.select(self.text)
+    Button: 
+        text: 'Never drop doors'
+        size_hint_y: None
+        height: 80
+        on_release:
+            root.select('Never drop doors')
     Button: 
         text: 'Doors Always Open'
         size_hint_y: None
         height: 80
         on_release:
-            root.select('Doors Always Open')
+            root.select(self.text)
 
     Button: 
-        text: 'Drop Red Player Door Only'
+        text: 'Drop Player 1 Door Only'
         size_hint_y: None
         height: 80
         on_release:
-            root.select('Drop Red Player Door Only')
+            root.select(self.text)
     Button: 
-        text: 'Drop Blue Player Door Only'
+        text: 'Drop Player 2 Door Only'
         size_hint_y: None
         height: 80
         on_release:
-            root.select('Drop Blue Player Door Only')
+            root.select(self.text)
     Button:
         text: 'Drop Random Door'
         size_hint_y: None
         height: 80
         on_release:
-            root.select('Drop Random Door')
+            root.select(self.text)
 
 
 <DeathmatchScreen>:
     name: 'deathmatch'
     id: dms
+    data:app.data.death_match
     on_pre_enter:
         self.ids.dm_door_drop.do_update_main_button(app.data.death_match.door_drop)
     ScrollView:
@@ -97,13 +105,13 @@
                     text: "Match Duration (Seconds):"
                     font_size: 30
                     halign: "left"
-                TextInput:
+                UIntInput:
                     id: dm_duration
                     size_hint: [1, .055]
                     input_filter: "int"
                     multiline: False
-                    text: app.data.death_match.duration
-                    on_text: app.data.death_match.duration = args[1]
+                    text: str(app.data.death_match.duration)
+                    on_text: app.data.death_match.duration = app.parse_int_or_zero(args[1])
                     font_size: 30
                     halign: "left"
 
@@ -127,13 +135,14 @@
                     font_size: 30
                     halign: "left"
 
-                TextInput:
+                UIntInput:
                     id: dm_door_drop_duration
                     size_hint: [1, .055]
                     input_filter: "int"
                     multiline: False
-                    text: app.data.death_match.door_drop_duration
-                    on_text: app.data.death_match.door_drop_duration = args[1]
+                    text: str(app.data.death_match.door_drop_duration)
+                    on_text:
+                        app.data.death_match.door_drop_duration = app.parse_int_or_zero(args[1])
                     font_size: 30
                     halign: "left"
 
@@ -175,33 +184,44 @@
                 Button:
                     text: 'Back'
                     size_hint: [1, .22]
+                    font_size: 30
                     on_release:
                         app.root.current = 'main'
                         root.manager.transition.direction = 'right'
                         dms.reset_screen(app)
-                    font_size: 30
                 Button:
                     text: 'Battle'
                     size_hint: [1, .22]
-                    on_release:
-                        temp = app.root.get_screen('WaitForPlayers')
-                        temp.reset_screen("RunDeathmatch", "Player", dms.name, "FIGHT!!!")
-                        app.root.current = 'WaitForPlayers'
-                        root.manager.transition.direction = 'left'
-
                     font_size: 30
+                    on_release:
+                        dms.on_battle_validation(app, root)
                 Button:
                     text: 'Reset'
                     size_hint: [1, .22]
+                    font_size: 30
                     on_release:
                         dms.reset_screen(app)
-                    font_size: 30
 
-
+<ErrorMessagePopUp>:
+    auto_dismiss: False
+    id: PopUp
+    StackLayout:
+        Label:
+            size_hint:[1, .8]
+            text: PopUp.message
+            font_size: 20
+            text_size: self.width, None
+            height: self.texture_size[1]
+        Button:
+            size_hint:[1, .2]
+            text: 'Close'
+            font_size: 20
+            on_release: root.dismiss()
 
 <SoccerScreen>:
     name: 'soccer'
     id:sms
+    data:app.data.soccer_match
     ScrollView:
         size_hint_y: 1
         do_scroll_x: False
@@ -220,12 +240,13 @@
                     text: "Match Duration (Seconds):"
                     font_size: 30
                     halign: "left"
-                TextInput:
+                UIntInput:
                     size_hint: [1, .055]
                     input_filter: "int"
                     multiline: False
-                    text: app.data.soccer_match.duration
-                    on_text: app.data.soccer_match.duration = args[1]
+                    text: str(app.data.soccer_match.duration)
+                    on_text:
+                        app.data.soccer_match.duration = app.parse_int_or_zero(args[1])
                     font_size: 30
                     halign: "left"
                 Label:
@@ -233,12 +254,12 @@
                     text: "Points:"
                     font_size: 30
                     halign: "left"
-                TextInput:
+                UIntInput:
                     size_hint: [1, .055]
                     input_filter: "int"
                     multiline: False
-                    text: app.data.soccer_match.points
-                    on_text: app.data.soccer_match.points = args[1]
+                    text: str(app.data.soccer_match.points)
+                    on_text: app.data.soccer_match.points = app.parse_int_or_zero(args[1])
                     font_size: 30
                     halign: "left"
                 Label:
@@ -283,14 +304,9 @@
                 Button:
                     text: 'Start Game'
                     size_hint: [1, .22]
-                    on_release:
-                        app.data.run_soccer_match.team_one_score = 0
-                        app.data.run_soccer_match.team_two_score = 0
-                        temp = app.root.get_screen('WaitForPlayers')
-                        temp.reset_screen("RunSoccer", "Team", sms.name, "GO!!!")
-                        app.root.current = 'WaitForPlayers'
-                        root.manager.transition.direction = 'left'
                     font_size: 30
+                    on_release:
+                        sms.on_match_validation(app, root)
                 Button:
                     text: 'Reset'
                     size_hint: [1, .22]
@@ -470,21 +486,8 @@
     data: app.data.run_death_match
     dmData: app.data.death_match
     id: rdms
-
-    on_player_one_wins:
-        countDownClock.cancel()
-        temp = app.root.get_screen('VictoryScreen')
-        temp.reset_screen(rdms.dmData.get_player_one_name() + " \nhas won!!!", "main")
-        app.root.current = 'VictoryScreen'
-        root.manager.transition.direction = 'left'
-
-    on_player_two_wins:
-        countDownClock.cancel()
-        temp = app.root.get_screen('VictoryScreen')
-        temp.reset_screen(rdms.dmData.get_player_two_name() + " \nhas won!!!", "main")
-        app.root.current = 'VictoryScreen'
-        root.manager.transition.direction = 'left'
-
+    on_pre_enter:
+        countDownClock.start(rdms.dmData.duration)
     StackLayout:
         GridLayout:
             cols: 3
@@ -492,9 +495,25 @@
             Label:
                 text: "Deathmatch"
                 font_size: 30
+            Label:
+                text:""
             CountDownClockLabel:
-                id:countDownClock
+                id: countDownClock
                 font_size:30
+                #on_timer_idle:
+                #    print("Called on timer idle")
+                #on_pause:
+                #   rss.pause_play_button_text = "Resume\nGame"
+                #on_resume:
+                #   rss.pause_play_button_text = "Pause\nGame"
+                #on_start:
+                #   print("Called on start")
+                #on_cancelled:
+                #    print("Called on cancelled")
+                #on_seconds:
+                #   print("Tick!")
+                #on_time_expired:
+                #    self.text = "Select a winner!";
         GridLayout:
             size_hint: [1, .8]
             cols:2
@@ -502,19 +521,26 @@
                 text: 'Player 1 Won'
                 font_size: 30
                 on_release:
-                    rdms.data.state = BBRunDeathMatchProp.STATE_player_one_wins
+                    countDownClock.cancel()
+                    temp = app.root.get_screen('VictoryScreen')
+                    temp.reset_screen(rdms.dmData.get_player_one_name() + " \nhas won!!!", "main")
+                    app.root.current = 'VictoryScreen'
+                    root.manager.transition.direction = 'left'
             Button:
                 text: 'Player 2 Won'
                 font_size: 30
                 on_release:
-                    rdms.data.state = BBRunDeathMatchProp.STATE_player_two_wins
-
-
+                    countDownClock.cancel()
+                    temp = app.root.get_screen('VictoryScreen')
+                    temp.reset_screen(rdms.dmData.get_player_two_name() + " \nhas won!!!", "main")
+                    app.root.current = 'VictoryScreen'
+                    root.manager.transition.direction = 'left'
 
         Button:
-            size_hint: [1, .1]
             text: 'Scrub Match'
+            size_hint: [1, .1]
             on_release:
+                countDownClock.cancel()
                 app.root.current = 'main'
                 root.manager.transition.direction = 'left'
                 app.data.death_match.reset()
