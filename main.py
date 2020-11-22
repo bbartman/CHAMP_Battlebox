@@ -12,12 +12,10 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty, NumericProperty
 from BattleBox.data import BBViewModelProp, BBDeathMatchProp, BBSoccerMatchProp, BBRunDeathMatchProp
+from BattleBox.arena import Arena
 from kivy.config import Config
 import platform, re
 
-from gpiozero import Device
-if platform.system() != 'Windows':
-    Device.pin_factory = MockFactory()
 
 Config.read("BattleBox.ini")
 
