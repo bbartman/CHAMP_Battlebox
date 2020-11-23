@@ -1,90 +1,49 @@
-#from BattleBox.data import BBDeathMatchProp
 from kivy.clock import Clock, mainthread
 from kivy.event import EventDispatcher
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, \
                             BoundedNumericProperty, NumericProperty, BooleanProperty
-
-import platform
-
-#import gpiozero
-#import sys
-#import time
-#import adafruit_blinka.agnostic as agnostic
-
-#try:
-#    import board
-#except:
-#    import BattleBox.mockboard as board
-
-#import digitalio
-
-
-#print("hello blinka!")
-
-#print(
-#    "Found system type: %s (sys.platform %s implementation %s) "
-#    % (agnostic.board_id, sys.platform, sys.implementation.name)
-#)
-
-#print("board contents: ", dir(board))
-##import gpiozero
-
-##if platform.system() != 'Windows':
-##    Device.pin_factory = MockFactory()
-#x = board.D7
-#led = digitalio.DigitalInOut(x)
-#led.direction = digitalio.Direction.OUTPUT
-
-#led.value = True
-#time.sleep(0.5)
-#led.value = False
-#time.sleep(0.5)
-
+import threading
 
 class Player(EventDispatcher):
-    door_detector = BooleanProperty(false)
-    ready_button = BooleanProperty(false)
-
-    def on_door_detector(self, *args):
-        pass
-
-    def on_ready_button(self, *args):
-        pass
-
-class LEDLightStrip(EventDispatcher):
-    brightness = NumericProperty(1.0)
-    auto_write = BooleanProperty(false)
-    # NEO_GRB + NEO_KHZ800
-    bytes_per_pixel = NumericProperty(3)
-    ordering = StringProperty("NEO_GRB")
-    length = NumericProperty(42)
-    pixels = ListProperty()
-    
-    def on_brightness(self, *args):
-        pass
-    
-    def on_auto_write(self, *args):
-        pass
-    
-    def on_bytes_per_pixel(self, *args):
-        pass
-    
-    def on_ordering(self, *args):
-        pass
-    
-    def on_length(self, *args):
-        pass
-
-    def on_pixels(self, *args):
-        pass
-    
-
-    
-
-class Arena(EventDispatcher):
-    Player1 = Player()
-    Player2 = Player()
+    name = StringProperty()
+    door_button = BooleanProperty(False)
+    ready_button = BooleanProperty(False)
     def __init__(self, **kwargs):
-        pass
+        super(Player, self).__init__(**kwargs)
 
-    #def 
+    def open_door(self):
+        print("{0} Open door!".format( self.name))
+
+    def secure_door_closed(self):
+        print("{0} Securing door closed".format( self.name))
+
+    def on_door_button(self, instance, value):
+        print("{0} door closed button pressed!".format( self.name))
+
+    def on_ready_button(self, instance, value):
+        print("{0} ready button pressed!".format( self.name))
+
+class HardwareInterface(EventDispatcher):
+    Player1 = Player(name = "Player1")
+    Player2 = Player(name = "Player2")
+
+    def __init__(self, **kwargs):
+        super(HardwareInterface, self).__init__(**kwargs)
+
+    def init(self):
+        print("Called init")
+
+    def set_led(self, index, red, green, blue):
+        print("set_led index = {0} red = {1} green = {2} blue = {3}".format(index, red, green, blue))
+
+    def led_fill(self, red, green, blue):
+        print("led_fill red = {1} green = {2} blue = {3}".format(red, green, blue))
+
+    def led_brightness(self, brightness):
+        print("led_brightness {0}".format(brightness))
+    
+    def leds_clear(self):
+        print("clear leds")
+
+    def leds_show(self):
+        print("leds_show")

@@ -13,3 +13,37 @@ Things to do:
 
 3. Make the death match stuff work the way it's supposed to.
 4. try and get things working on the pi.
+
+Arena TODOS:
+1. Lights:
+	1. Lights on.
+	2. Lights for idle.
+		A. Turning off lights for idle.
+	3. Lights for waiting for players.
+	4. Lights for player 1 ready.
+	5. Lights for player 2 ready.
+	6. Lights for door drop.
+	7. Lights for time remaining in match? Should we have a count down to end of match?
+	8. Lights for team
+		A. Team 1 Goal
+		B. Team 2 Goal
+	9. Lights for game paused.
+	10. Lights for Player 1/2 wins deathmatch
+	11. Lights for team 1/2 wins soccer
+	12. Lights for soccer match tie
+	13. Lights for game countdown.
+	14. Ligths for game selection.
+	15. Lights for configuring death match.
+	16. Lights for configuring soccer.
+	17. Lights for waiting for players to close doors.
+	18. Lights for waiting for players to press ready.
+	19. Lights for doors not closed when player presses ready.
+2. Buttons
+	1. Read when player ready button changed.
+		a. Be able to cancel/resume when we are reading button changes.
+		b. Make sure we aren't always reading button changes.
+	2. Read when door closed changes when it's suppsoed to be.
+		a. Make sure to be able to cancel or ignore and resume these events.
+		b. Make sure doors are closed for specific configurations of death match
+		C. Make sure to change lights when if the door needs to be closed before
+		   the match can begin and they are not closed.

@@ -12,7 +12,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty, NumericProperty
 from BattleBox.data import BBViewModelProp, BBDeathMatchProp, BBSoccerMatchProp, BBRunDeathMatchProp
-from BattleBox.arena import Arena
+from BattleBox.arena import HardwareInterface
 from kivy.config import Config
 import platform, re
 
@@ -527,17 +527,25 @@ class FadeTicker(Label):
         
     def on_ready(self):
         pass
-
+HWProp = HardwareInterface
+if platform.system() != 'Windows':
+    #HWProp
+    # TODO: Change the type here so that if I'm not in windows
+    # I can change behavior
+    pass
 
 class MainApp(App):
     data = BBViewModelProp()
+    arena = HWProp()
     def parse_int_or_zero(self, stringValue):
         try:
             return int(stringValue)
         except:
             return 0
+
     def __init__(self, **kwargs): 
         super(MainApp, self).__init__(**kwargs)
+        self.arena.init()
 
     def build(self):
         root_widget = ScreenManagement()
