@@ -17,6 +17,8 @@
 <MainScreen>:
     name: 'main'
     data: app.data
+    on_pre_enter:
+        app.breathing_light_control.start()
     GridLayout:
         rows:2
         Label:
@@ -31,6 +33,8 @@
                     app.data.death_match.reset()
                     app.root.current = 'deathmatch'
                     root.manager.transition.direction = 'left'
+                    app.breathing_light_control.stop()
+                    app.breathing_light_control.start((255, 0, 0))
 
             Button:
                 text: 'Soccer'
@@ -39,6 +43,8 @@
                     app.data.soccer_match.reset()
                     app.root.current = 'soccer'
                     root.manager.transition.direction = 'left'
+                    app.breathing_light_control.stop()
+                    app.breathing_light_control.start((0, 255, 0))
 
 <CustomDropDown>:
     Button: 

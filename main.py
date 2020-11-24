@@ -527,6 +527,7 @@ class FadeTicker(Label):
         
     def on_ready(self):
         pass
+
 HWProp = HardwareInterface
 if platform.system() != 'Windows':
     #HWProp
@@ -534,9 +535,59 @@ if platform.system() != 'Windows':
     # I can change behavior
     pass
 
+class BreathingLights:
+    def __init__(self, hw, **kwargs):
+        assert hw != None, "Missing hardware"
+        self.hardware = hw
+        self.running = False
+        self.increasing = True
+        self.min = kwargs.get("min", 0.3)
+        self.max = kwargs.get("max", 0.9)
+        self.color = kwargs.get("color", (255, 255, 255))
+        assert self.min != self.max, "min and max cannot be the same value."
+        assert self.min < self.max, "Min must be less than max."
+        assert self.min >0, "Min must be greater than zero"
+        assert self.max <= 1.0, "Max must be less than 1.0"
+        if "increment" in kwargs:
+            self.increment = kwargs.get("increment", 0.9)
+        elif "cycle_time" in kwargs:
+            # divide by 10 because we have to make sure that we increment every
+            # 1 tenth of a second and the cycle time should be in seconds.
+            self.increment = ((self.max - self.min)/kwargs["cycle_time"])/10
+        else:
+            self.increment = 0.1
+        
+
+    def start(self, color=None):
+        self.running = True
+        if color == None:
+            self.hardware.led_fill(*self.color)
+        else:
+            self.hardware.led_fill(*color)
+        self.value = self.min
+        self.hardware.led_brightness(self.value)
+        Clock.schedule_interval(self.breathing_brightness_cb, 0.1)
+
+    def stop(self):
+        self.running = False
+
+    def breathing_brightness_cb(self, time_delta):
+        if self.running:
+            if self.increasing:
+                self.value += self.increment
+                if self.value >= self.max:
+                    self.increasing = False
+            else:
+                self.value -= self.increment
+                if self.value <= self.min:
+                    self.increasing = True
+            self.hardware.led_brightness(self.value)
+        return self.running
+
 class MainApp(App):
     data = BBViewModelProp()
     arena = HWProp()
+
     def parse_int_or_zero(self, stringValue):
         try:
             return int(stringValue)
@@ -544,12 +595,81 @@ class MainApp(App):
             return 0
 
     def __init__(self, **kwargs): 
+        self.whiteLight = (255, 255, 255)
         super(MainApp, self).__init__(**kwargs)
         self.arena.init()
+        self.breathing_light_control = BreathingLights(self.arena,
+                                                       color=self.whiteLight,
+                                                       cycle_time=3.0)
+        self.breathing_light_control.start()
+        #self.accept_door_presses = False
 
     def build(self):
         root_widget = ScreenManagement()
         return root_widget
+                
+    def lights_off(self):
+        self.arena.led_fill(0, 0, 0)
+        self.arena.led_brightness(0)
 
+    def lights_waiting_for_players(self):
+        self.arean.fill(0, 255, 128)
+
+    def lights_player_1_ready(self):
+        pass
+
+    def lights_player_2_ready(self):
+        pass
+
+    def lights_player_1_door_closed(self):
+        pass
+
+    def lights_player_2_door_closed(self):
+        pass
+
+    def lights_soccer_team_1_scored(self):
+        pass
+
+    def lights_soccer_team_2_scored(self):
+        pass
+
+    def lights_soccer_team_1_wins(self):
+        pass
+
+    def lights_soccer_team_2_wins(self):
+        pass
+
+    def lights_soccer_match_tie(self):
+        pass
+
+    def lights_death_match_config(self):
+        pass
+
+    def lights_soccer_config(self):
+        pass
+
+    def lights_count_down_screen_1(self):
+        pass
+
+    def lights_count_down_screen_2(self):
+        pass
+
+    def lights_count_down_screen_3(self):
+        pass
+
+    def lights_soccer_match_lights(self):
+        pass
+    
+    def lights_death_match_lights(self):
+        pass
+
+    def lights_game_paused_lights(self):
+        pass
+
+    def lights_door_drop_count_down_lights(self):
+        pass
+
+    def lights_selection_screen(self):
+        pass
 if __name__ == '__main__':
     MainApp().run()

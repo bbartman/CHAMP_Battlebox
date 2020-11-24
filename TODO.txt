@@ -45,5 +45,5 @@ Arena TODOS:
 	2. Read when door closed changes when it's suppsoed to be.
 		a. Make sure to be able to cancel or ignore and resume these events.
 		b. Make sure doors are closed for specific configurations of death match
-		C. Make sure to change lights when if the door needs to be closed before
+		c. Make sure to change lights when if the door needs to be closed before
 		   the match can begin and they are not closed.

@@ -12,7 +12,7 @@ class Player(EventDispatcher):
         super(Player, self).__init__(**kwargs)
 
     def open_door(self):
-        print("{0} Open door!".format( self.name))
+        print("{0} Open door!".format(self.name))
 
     def secure_door_closed(self):
         print("{0} Securing door closed".format( self.name))
@@ -37,13 +37,14 @@ class HardwareInterface(EventDispatcher):
         print("set_led index = {0} red = {1} green = {2} blue = {3}".format(index, red, green, blue))
 
     def led_fill(self, red, green, blue):
-        print("led_fill red = {1} green = {2} blue = {3}".format(red, green, blue))
+        print("led_fill red = {0} green = {1} blue = {2}".format(red, green, blue))
 
     def led_brightness(self, brightness):
         print("led_brightness {0}".format(brightness))
-    
+
     def leds_clear(self):
         print("clear leds")
 
     def leds_show(self):
         print("leds_show")
+
