@@ -1,4 +1,3 @@
-from kivy.clock import Clock, mainthread
 from kivy.event import EventDispatcher
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, \
                             BoundedNumericProperty, NumericProperty, BooleanProperty

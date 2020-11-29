@@ -10,6 +10,7 @@
     RunSoccerScreen:
     DMDecisionScreen:
     PlayersReadyScreen:
+    WaitForPlayersAndDoors:
     VictoryScreen:
     ManualSoccerScoreAdjustmentScreen:
     CountDownScreen:
@@ -18,7 +19,9 @@
     name: 'main'
     data: app.data
     on_pre_enter:
-        app.breathing_light_control.start()
+        app.match_select_enter()
+    on_pre_leave:
+        app.match_select_leave()
     GridLayout:
         rows:2
         Label:
@@ -33,18 +36,15 @@
                     app.data.death_match.reset()
                     app.root.current = 'deathmatch'
                     root.manager.transition.direction = 'left'
-                    app.breathing_light_control.stop()
-                    app.breathing_light_control.start((255, 0, 0))
 
             Button:
                 text: 'Soccer'
                 font_size: 24
                 on_release:
+                    app.match_select_leave()
                     app.data.soccer_match.reset()
                     app.root.current = 'soccer'
                     root.manager.transition.direction = 'left'
-                    app.breathing_light_control.stop()
-                    app.breathing_light_control.start((0, 255, 0))
 
 <CustomDropDown>:
     Button: 
@@ -53,12 +53,14 @@
         height: 80
         on_release:
             root.select(self.text)
+
     Button: 
         text: 'Never drop doors'
         size_hint_y: None
         height: 80
         on_release:
             root.select('Never drop doors')
+
     Button: 
         text: 'Doors Always Open'
         size_hint_y: None
@@ -92,6 +94,9 @@
     data:app.data.death_match
     on_pre_enter:
         self.ids.dm_door_drop.do_update_main_button(app.data.death_match.door_drop)
+        app.lights_death_match_config_enter()
+    on_pre_leave:
+        app.lights_death_match_config_leave()
     ScrollView:
         size_hint_y: 1
         do_scroll_x: False
@@ -228,6 +233,10 @@
     name: 'soccer'
     id:sms
     data:app.data.soccer_match
+    on_pre_enter:
+        app.lights_soccer_config_enter()
+    on_pre_leave:
+        app.lights_soccer_config_leave()
     ScrollView:
         size_hint_y: 1
         do_scroll_x: False
@@ -331,6 +340,7 @@
         app.root.current = 'VictoryScreen'
         root.manager.transition.direction = 'left'
     on_pre_enter:
+        app.lights_soccer_match()
         countDownClock.start(rss.smData.duration)
         subScrn.current = 'mainRunSoccerScreen'
         rss.pause_play_button_text = "Pause\nGame"
@@ -393,11 +403,13 @@
                         font_size: 30
                         on_release:
                             rss.data.team_one_score += 1
+                            app.lights_soccer_team_2_scored()
 
                     Button:
                         text: 'Team 1\nWins'
                         font_size: 30
                         on_release:
+                            app.lights_soccer_team_1_wins()
                             temp = app.root.get_screen('VictoryScreen')
                             temp.reset_screen(rss.smData.get_team_one_name() + " \nhas won!!!", "main")
                             app.root.current = 'VictoryScreen'
@@ -417,11 +429,13 @@
                         font_size: 30
                         on_release:
                             rss.data.team_two_score += 1
+                            app.lights_soccer_team_2_scored()
         
                     Button:
                         text: 'Team 2\nWins' 
                         font_size: 30
                         on_release:
+                            app.lights_soccer_team_2_wins()
                             temp = app.root.get_screen('VictoryScreen')
                             temp.reset_screen(rss.smData.get_team_two_name() + " \nhas won!!!", "main")
                             app.root.current = 'VictoryScreen'
@@ -493,6 +507,8 @@
     dmData: app.data.death_match
     id: rdms
     on_pre_enter:
+        self.reset_screen(app, root)
+        app.lights_death_match()
         countDownClock.start(rdms.dmData.duration)
     StackLayout:
         GridLayout:
@@ -506,6 +522,7 @@
             CountDownClockLabel:
                 id: countDownClock
                 font_size:30
+
                 #on_timer_idle:
                 #    print("Called on timer idle")
                 #on_pause:
@@ -591,9 +608,8 @@
         temp.reset_screen(self.next_screen_after_ready, wfp.previous_screen, wfp.count_down_word)
         app.root.current = temp.name
         root.manager.transition.direction = 'left'
-    on_leave:
-        p1_rdy_btn.disabled = False
-        p2_rdy_btn.disabled = False
+    on_pre_enter:
+        app.lights_waiting_for_players()
     StackLayout:
         Label:
             size_hint: [1, .1]
@@ -606,16 +622,85 @@
                 text: wfp.player_or_team + ' 1 \nReady'
                 font_size: 30
                 id:p1_rdy_btn
+                disabled:wfp.player_1_ready
                 on_release:
-                    wfp.players_ready += 1
+                    wfp.player_1_ready = True
                     self.disabled = True
             Button:
                 text: wfp.player_or_team + ' 2 \nReady'
                 font_size: 30
                 id:p2_rdy_btn
+                disabled:wfp.player_2_ready
                 on_release:
-                    wfp.players_ready += 1
+                    wfp.player_2_ready = True
                     self.disabled = True
+        Button:
+            text: 'Reconfigure'
+            size_hint:[1, .1]
+            on_release:
+                app.root.current = wfp.previous_screen
+                root.manager.transition.direction = 'right'
+            font_size: 30
+
+<BGDoorLabel>:
+    bg_color: [1, 1, 1, 1]
+    canvas.before:
+        Color:
+            rgba: self.bg_color
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<WaitForPlayersAndDoors>
+    name: 'WaitForPlayersAndDoors'
+    id:wfp
+    on_everyone_ready:
+        temp = app.root.get_screen('CountDownScreen')
+        temp.reset_screen(self.next_screen_after_ready, wfp.previous_screen, wfp.count_down_word)
+        app.root.current = temp.name
+        root.manager.transition.direction = 'left'
+    on_pre_enter:
+        app.lights_waiting_for_players()
+    on_leave:
+        p1_rdy_btn.disabled = False
+        p2_rdy_btn.disabled = False
+    StackLayout:
+        Label:
+            size_hint: [1, .1]
+            text: "Waiting for players"
+            font_size: 30
+        GridLayout:
+            size_hint: [1, .4]
+            cols:3
+            BGDoorLabel:
+                text: wfp.player_or_team + ' 1 \ndoor not closed'
+                font_size: 30
+                bg_color: [1, 0, 0, 1]
+                id:player_1_door_label
+            Label:
+                size_hint:[0.01, 1]
+            BGDoorLabel:
+                text: wfp.player_or_team + ' 2 \ndoor not closed'
+                font_size: 30
+                id:player_2_door_label
+                bg_color: [1, 0, 0, 1]
+        GridLayout:
+            size_hint: [1, .4]
+            cols:2
+            Button:
+                text: wfp.player_or_team + ' 1 \nReady'
+                font_size: 30
+                id:p1_rdy_btn
+                disabled:wfp.player_1_ready
+                on_release:
+                    wfp.player_1_ready = True
+            Button:
+                text: wfp.player_or_team + ' 2 \nReady'
+                font_size: 30
+                id:p2_rdy_btn
+                disabled:wfp.player_2_ready
+                on_release:
+                    wfp.player_2_ready = True
         Button:
             text: 'Reconfigure'
             size_hint:[1, .1]

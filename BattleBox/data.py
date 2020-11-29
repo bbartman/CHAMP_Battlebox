@@ -70,6 +70,7 @@ class BBSoccerMatchProp(EventDispatcher):
             return "Team 2"
         else:
             return self.team_two_name
+
     def on_duration(self, instance, value):
         pass
     
@@ -92,8 +93,10 @@ class BBSoccerMatchProp(EventDispatcher):
 class BBRunSoccerProp(EventDispatcher):
     team_one_score = BoundedNumericProperty(0, min=0, max=1000, errorvalue=0)
     team_two_score = BoundedNumericProperty(0, min=0, max=1000, errorvalue=0)
+
     def on_team_one_score(self, instance, value):
         pass
+
     def on_team_two_score(self, instance, value):
         pass
 
