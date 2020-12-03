@@ -5,36 +5,36 @@ from kivy.properties import ListProperty, ObjectProperty, StringProperty, \
                             BoundedNumericProperty, NumericProperty, BooleanProperty
 import threading, queue
 
-# Abstract the interface that we use to interact with the hardware
-# this includes multiple state machines for things like opening and closing
-# doors, reading of button presses, and recording their values constantly.
-class ArenaEventProcessor(EventDispatcher):
-    stopEv = threading.Event()
-    def __init__(self, hw_interface):
-        self.arena = hw_interface
-        self.eventQueue = queue.Queue()
-        self.lights_thread = threading.Thread(target=self.lights_processor).start()
-        self.hw_thread = threading.Thread(target=self.buttons_and_switches)
+# # Abstract the interface that we use to interact with the hardware
+# # this includes multiple state machines for things like opening and closing
+# # doors, reading of button presses, and recording their values constantly.
+# class ArenaEventProcessor(EventDispatcher):
+#     stopEv = threading.Event()
+#     def __init__(self, hw_interface):
+#         self.arena = hw_interface
+#         self.eventQueue = queue.Queue()
+#         self.lights_thread = threading.Thread(target=self.lights_processor).start()
+#         self.hw_thread = threading.Thread(target=self.buttons_and_switches)
         
-    def stop(self):
-        self.stopEv.set()
-        self.lights_thread.join()
-        self.hw_thread.join()
-    def buttons_and_switches(self):
+#     def stop(self):
+#         self.stopEv.set()
+#         self.lights_thread.join()
+#         self.hw_thread.join()
+#     def buttons_and_switches(self):
 
-        pass
+#         pass
 
-    def lights_processor(self):
-        while True:
-            # Stop running this thread so the main Python process can exit.
-            if self.stop.is_set():
-                return
-            try:
-                self.get_nowait()
-            except queue.Empty:
-                pass
-            time.sleep(0.01)
-        self.thread.join()
+#     def lights_processor(self):
+#         while True:
+#             # Stop running this thread so the main Python process can exit.
+#             if self.stop.is_set():
+#                 return
+#             try:
+#                 self.get_nowait()
+#             except queue.Empty:
+#                 pass
+#             time.sleep(0.01)
+#         self.thread.join()
 
 
 

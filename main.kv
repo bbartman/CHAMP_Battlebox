@@ -9,7 +9,7 @@
     SoccerScreen:
     RunSoccerScreen:
     DMDecisionScreen:
-    PlayersReadyScreen:
+    WaitForPlayers:
     WaitForPlayersAndDoors:
     VictoryScreen:
     ManualSoccerScoreAdjustmentScreen:
@@ -600,7 +600,7 @@
                     app.root.current = 'VictoryScreen'
                     root.manager.transition.direction = 'left'
 
-<PlayersReadyScreen>
+<WaitForPlayers>
     name: 'WaitForPlayers'
     id:wfp
     on_everyone_ready:
@@ -610,6 +610,10 @@
         root.manager.transition.direction = 'left'
     on_pre_enter:
         app.lights_waiting_for_players()
+        wfp.is_active = True
+    on_leave:
+        wfp.is_active = False
+    
     StackLayout:
         Label:
             size_hint: [1, .1]
@@ -622,7 +626,7 @@
                 text: wfp.player_or_team + ' 1 \nReady'
                 font_size: 30
                 id:p1_rdy_btn
-                disabled:wfp.player_1_ready
+                disabled: wfp.player_1_ready
                 on_release:
                     wfp.player_1_ready = True
                     self.disabled = True
@@ -630,7 +634,7 @@
                 text: wfp.player_or_team + ' 2 \nReady'
                 font_size: 30
                 id:p2_rdy_btn
-                disabled:wfp.player_2_ready
+                disabled: wfp.player_2_ready
                 on_release:
                     wfp.player_2_ready = True
                     self.disabled = True
@@ -660,10 +664,10 @@
         app.root.current = temp.name
         root.manager.transition.direction = 'left'
     on_pre_enter:
+        wfp.is_active = True
         app.lights_waiting_for_players()
     on_leave:
-        p1_rdy_btn.disabled = False
-        p2_rdy_btn.disabled = False
+        wfp.is_active = False
     StackLayout:
         Label:
             size_hint: [1, .1]
@@ -693,14 +697,14 @@
                 id:p1_rdy_btn
                 disabled:wfp.player_1_ready
                 on_release:
-                    wfp.player_1_ready = True
+                    wfp.player_1_ready_button_pressed()
             Button:
                 text: wfp.player_or_team + ' 2 \nReady'
                 font_size: 30
                 id:p2_rdy_btn
                 disabled:wfp.player_2_ready
                 on_release:
-                    wfp.player_2_ready = True
+                    wfp.player_2_ready_button_pressed()
         Button:
             text: 'Reconfigure'
             size_hint:[1, .1]

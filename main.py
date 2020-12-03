@@ -1,3 +1,6 @@
+from kivy.config import Config
+Config.set('kivy', 'keyboard_mode', 'systemanddock')
+Config.read("BattleBox.ini")
 from kivy.app import App
 from kivy.animation import Animation
 from kivy.clock import Clock
@@ -13,11 +16,11 @@ from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, BoundedNumericProperty, NumericProperty, BooleanProperty
 from BattleBox.data import BBViewModelProp, BBDeathMatchProp, BBSoccerMatchProp, BBRunDeathMatchProp
 from BattleBox.arena import HardwareInterface
-from kivy.config import Config
+from kivy.core.window import Window
+from kivy.logger import Logger
+
 import platform, re
 
-
-Config.read("BattleBox.ini")
 
 class MainScreen(Screen):
     pass
@@ -101,31 +104,37 @@ class DeathmatchScreen(Screen):
         app.root.current = 'WaitForPlayersAndDoors'
         root.manager.transition.direction = 'left'
 
+class CountDownTrigger:
+    __doc__ = '''All runtimes given in seconds'''
+    def __init__(self, completionTime, runDuration):
+        pass
+
 class RunDeathmatchScreen(Screen):
     data = ObjectProperty(None)
     dmData = ObjectProperty(None)
 
     # The computed amount of time in seconds
     # until the door should drop.
-    time_stamp_to_drop_doors_at = NumericProperty(30)
-    time_stamp_to_start_count_down_lights = NumericProperty(30)
-    time_stamp_match_over_count_down_start = NumericProperty(30)
-    disable_door_drop_count_down = BooleanProperty(False)
+    # time_stamp_to_drop_doors_at = NumericProperty(30)
+    # time_stamp_to_start_count_down_lights = NumericProperty(30)
+    # time_stamp_match_over_count_down_start = NumericProperty(30)
+    # disable_door_drop_count_down = BooleanProperty(False)
 
     # Used to track if we will drop the doors during this match
-    will_drop_doors = BooleanProperty(False)
+    # will_drop_doors = BooleanProperty(False)
 
     # Used to trigger the dropping of the doors
-    doors_dropped = BooleanProperty(False)
+    # doors_dropped = BooleanProperty(False)
 
-    door_drop_count_down_increment = NumericProperty(1)
-    match_over_count_down_increment = NumericProperty(1)
+    # door_drop_count_down_increment = NumericProperty(1)
+    # match_over_count_down_increment = NumericProperty(1)
 
     def __init__(self, **kwargs): 
         self.register_event_type("on_drop_doors")
         super(RunDeathmatchScreen, self).__init__(**kwargs)
 
     def reset_screen(self, app, root):
+        print("Called reset screen!")
         self.time_stamp_to_drop_doors_at = 0
         self.time_stamp_to_start_count_down_lights = 0
         self.time_stamp_match_over_count_down_start = 30
@@ -143,7 +152,10 @@ class RunDeathmatchScreen(Screen):
                                                             self.time_stamp_match_over_count_down_start])
         totalLightTime = self.time_stamp_match_over_count_down_start - endingTime
         self.match_over_count_down_increment = totalLightTime/App.get_running_app().get_led_count()
+        print("time_stamp_match_over_count_down_start = ", self.time_stamp_match_over_count_down_start)
+        print("Value for door drop = ", self.dmData.door_drop)
         if self.dmData.door_drop == 'Drop Both':
+            print("We will drop both?!")
             self.will_drop_doors = True
         elif self.dmData.door_drop == 'Never drop doors':
             self.will_drop_doors = False
@@ -155,26 +167,41 @@ class RunDeathmatchScreen(Screen):
             self.will_drop_doors = True
         elif self.dmData.door_drop == 'Drop Random Door':
             self.will_drop_doors = True
+        else:
+            print("Value for door drop = ", self.dmData.door_drop)
         if self.will_drop_doors:
             self.time_stamp_to_drop_doors_at = self.dmData.duration - self.dmData.door_drop_duration
+            print("self.time_stamp_to_drop_doors_at = ", self.time_stamp_to_drop_doors_at)
 
             # Checking if the match and door drop timer will overlap.
             # if they do simply ignore things. 
-            if self.time_stamp_to_start_count_down_lights < self.time_stamp_match_over_count_down_start:
+            self.time_stamp_to_start_count_down_lights = self.time_stamp_to_drop_doors_at + 15
+            if self.time_stamp_to_start_count_down_lights >= self.time_stamp_match_over_count_down_start:
+                Logger.info("We can't show door drop countdown, end of match and door drop overlap")
                 self.disable_door_drop_count_down = True
                 return
 
-            self.time_stamp_to_start_count_down_lights = self.time_stamp_to_drop_doors_at + 15
             self.time_stamp_to_start_count_down_lights = min([self.dmData.duration,
                                                               self.time_stamp_to_start_count_down_lights])
             # Handling things as time per light, NOT lights per second.
             totalLightTime = self.time_stamp_to_start_count_down_lights - self.time_stamp_to_drop_doors_at
             self.door_drop_count_down_increment = totalLightTime/App.get_running_app().get_led_count()
+            self.lights_count_down_active = False
+            print("Will drop doors")
 
 
     def on_seconds(self, instance, value):
         self.text = str(round(self.seconds, 1))
-        #if self.seconds
+        if self.will_drop_doors:
+            if not self.lights_count_down_active:
+                if self.seconds <= self.time_stamp_to_start_count_down_lights:
+                    print("Lights On")
+                    self.lights_count_down_active = True
+            else:
+                if self.seconds <= self.time_stamp_to_drop_doors_at:
+                    print("Lights Completed")
+                    self.lights_count_down_active = False
+            
     def on_data(self, instance, value):
         pass
 
@@ -304,8 +331,7 @@ class DMDecisionScreen(Screen):
     pass
 
 
-class PlayersReadyScreen(Screen):
-    players_ready = NumericProperty()
+class WaitForPlayers(Screen):
     next_screen_after_ready = StringProperty()
     player_or_team = StringProperty("Player")
     previous_screen = StringProperty()
@@ -313,10 +339,24 @@ class PlayersReadyScreen(Screen):
     player_1_ready = BooleanProperty(False)
     player_2_ready = BooleanProperty(False)
 
+    is_active = BooleanProperty(False)
+
     needs_doors_closed = BooleanProperty(False)
     def __init__(self, **kwargs): 
         self.register_event_type("on_everyone_ready")
-        super(PlayersReadyScreen, self).__init__(**kwargs)
+        super(WaitForPlayers, self).__init__(**kwargs)
+        App.get_running_app().arena.player_1.bind(
+            ready_button=self.on_player_1_pressed_ready_button)
+        App.get_running_app().arena.player_2.bind(
+            ready_button=self.on_player_2_pressed_ready_button)
+
+    def on_player_1_pressed_ready_button(self, instance, value):
+        if self.is_active:
+            self.player_1_ready = True
+
+    def on_player_2_pressed_ready_button(self, instance, value):
+        if self.is_active:
+            self.player_2_ready = True
 
     def reset_screen(self, nextScreen, POrT, previousScreen, word):
         self.next_screen_after_ready = nextScreen
@@ -329,6 +369,10 @@ class PlayersReadyScreen(Screen):
     def checkForReadyState(self):
         if (self.player_1_ready and self.player_2_ready):
             self.dispatch("on_everyone_ready")
+
+    def on_pre_enter(self):
+        self.player_1_ready = App.get_running_app().arena.player_1.ready_button
+        self.player_2_ready = App.get_running_app().arena.player_2.ready_button
 
     def on_next_screen_after_ready(self, instance, value):
         pass
@@ -352,8 +396,8 @@ class PlayersReadyScreen(Screen):
 class BGDoorLabel(Label):
     bg_color = ListProperty([0,0,0,0])
 
-RedBGColorList = [0, 1, 0, 1]
-GreenBGColorList = [1, 0, 0, 1]
+RedBGColorList = [1, 0, 0, 1]
+GreenBGColorList = [0, 1, 0, 1]
 
 class WaitForPlayersAndDoors(Screen):
     next_screen_after_ready = StringProperty()
@@ -364,11 +408,34 @@ class WaitForPlayersAndDoors(Screen):
     player_2_ready = BooleanProperty(False)
     player_1_door_closed = BooleanProperty(False)
     player_2_door_closed = BooleanProperty(False)
-
     needs_doors_closed = BooleanProperty(False)
+    is_active = BooleanProperty(False)
+
     def __init__(self, **kwargs): 
         self.register_event_type("on_everyone_ready")
         super(WaitForPlayersAndDoors, self).__init__(**kwargs)
+        App.get_running_app().arena.player_1.bind(
+            ready_button=self.on_player_1_pressed_ready_button,
+            door_button=self.on_player_1_closed_door)
+        App.get_running_app().arena.player_2.bind(
+            ready_button=self.on_player_2_pressed_ready_button,
+            door_button=self.on_player_2_closed_door)
+
+    def on_player_1_pressed_ready_button(self, instance, value):
+        if self.is_active and self.player_1_door_closed:
+            self.player_1_ready_button_pressed()
+
+    def on_player_2_pressed_ready_button(self, instance, value):
+        if self.is_active and self.player_2_door_closed:
+            self.player_2_ready_button_pressed()
+
+    def on_player_1_closed_door(self, instance, value):
+        if self.is_active:
+            self.player_1_door_closed = value
+
+    def on_player_2_closed_door(self, instance, value):
+        if self.is_active:
+            self.player_2_door_closed = value
 
     def reset_screen(self, nextScreen, POrT, previousScreen, word):
         self.next_screen_after_ready = nextScreen
@@ -379,6 +446,14 @@ class WaitForPlayersAndDoors(Screen):
         self.player_2_ready = False
         self.player_1_door_closed = False
         self.player_2_door_closed = False
+
+    def on_enter(self):
+        self.player_1_ready = App.get_running_app().arena.player_1.ready_button
+        self.player_2_ready = App.get_running_app().arena.player_2.ready_button
+        self.player_1_door_closed = App.get_running_app().arena.player_1.door_button
+        self.player_2_door_closed = App.get_running_app().arena.player_2.door_button
+        self.on_player_1_door_closed(None, self.player_1_door_closed)
+        self.on_player_2_door_closed(None, self.player_2_door_closed)
 
     def checkForReadyState(self):
         if (self.player_1_ready and self.player_2_ready
@@ -393,6 +468,14 @@ class WaitForPlayersAndDoors(Screen):
 
     def on_count_down_word(self, instance, value):
         pass
+
+    def player_1_ready_button_pressed(self):
+        if self.player_1_door_closed:
+            self.player_1_ready = True
+
+    def player_2_ready_button_pressed(self):
+        if self.player_2_door_closed:
+            self.player_2_ready = True
 
     def on_player_1_ready(self, instance, value):
         if value:
@@ -415,13 +498,13 @@ class WaitForPlayersAndDoors(Screen):
         else:
             return
 
-
     def on_player_1_door_closed(self, instance, value):
         if value:
             self.ids.player_1_door_label.bg_color = GreenBGColorList
             App.get_running_app().lights_player_1_door_closed()
         else:
             self.ids.player_1_door_label.bg_color = RedBGColorList
+            self.player_1_ready = False
             
 
     def on_player_2_door_closed(self, instance, value):
@@ -430,6 +513,7 @@ class WaitForPlayersAndDoors(Screen):
             App.get_running_app().lights_player_2_door_closed()
         else:
             self.ids.player_2_door_label.bg_color = RedBGColorList
+            self.player_2_ready = False
 
 
 class ScreenManagement(ScreenManager):
@@ -710,10 +794,11 @@ class FadeTicker(Label):
 
 HWProp = HardwareInterface
 if platform.system() != 'Windows':
-    #HWProp
+    from arena.physicalarena import Arena
+    HWProp = Arena
     # TODO: Change the type here so that if I'm not in windows
     # I can change behavior
-    pass
+    # pass
 
 class BreathingLights:
     def __init__(self, hw, **kwargs):
@@ -726,25 +811,26 @@ class BreathingLights:
         self.color = kwargs.get("color", (255, 255, 255))
         assert self.min != self.max, "min and max cannot be the same value."
         assert self.min < self.max, "Min must be less than max."
-        assert self.min >0, "Min must be greater than zero"
-        assert self.max <= 1.0, "Max must be less than 1.0"
+        assert self.min > 0, "Min must be greater than zero"
+        assert self.max <= 1.0, "Max must be less than or equal to 1"
         if "increment" in kwargs:
-            self.increment = kwargs.get("increment", 0.9)
+            self.increment = kwargs.get("increment", 0.1)
         elif "cycle_time" in kwargs:
             # divide by 10 because we have to make sure that we increment every
             # 1 tenth of a second and the cycle time should be in seconds.
             self.increment = ((self.max - self.min)/kwargs["cycle_time"])/10
         else:
             self.increment = 0.1
+            
         
     def start(self, color=None):
         self.running = True
         if color == None:
             self.hardware.led_fill(*self.color)
         else:
+            self.color = color
             self.hardware.led_fill(*color)
         self.value = self.min
-        self.hardware.led_brightness(self.value)
         Clock.schedule_interval(self.breathing_brightness_cb, 0.1)
 
     def stop(self):
@@ -781,7 +867,7 @@ class MainApp(App):
                                                        color=self.whiteLight,
                                                        cycle_time=3.0)
         self.breathing_light_control.start()
-        #self.accept_door_presses = False
+
 
     def build(self):
         root_widget = ScreenManagement()
@@ -811,6 +897,7 @@ class MainApp(App):
     #
     def lights_player_2_ready(self):
         pass
+
     #
     def lights_player_1_door_closed(self):
         pass
@@ -901,6 +988,7 @@ class MainApp(App):
 
     def do_door_drop(self):
         pass
+
 
 if __name__ == '__main__':
     MainApp().run()
