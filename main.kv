@@ -522,7 +522,8 @@
             CountDownClockLabel:
                 id: countDownClock
                 font_size:30
-
+                on_seconds:
+                    rdms.on_seconds(args[0], args[1])
                 #on_timer_idle:
                 #    print("Called on timer idle")
                 #on_pause:

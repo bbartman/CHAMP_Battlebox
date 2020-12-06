@@ -18,7 +18,7 @@ from BattleBox.data import BBViewModelProp, BBDeathMatchProp, BBSoccerMatchProp,
 from BattleBox.arena import HardwareInterface
 from kivy.core.window import Window
 from kivy.logger import Logger
-
+from math import floor
 import platform, re
 
 
@@ -46,7 +46,7 @@ class DeathmatchScreen(Screen):
 
     def __init__(self, **kwargs): 
         super(DeathmatchScreen, self).__init__(**kwargs)
-
+    
     def drop_down_changed(self, instance, x):
         if x == 'Drop Both':
             self.ids.dm_door_drop_duration.disabled = False
@@ -106,56 +106,100 @@ class DeathmatchScreen(Screen):
 
 class CountDownTrigger:
     __doc__ = '''All runtimes given in seconds'''
-    def __init__(self, completionTime, runDuration):
-        pass
+    def __init__(self, arena):
+        self.arena = arena
+        self.stop_time = 0
+        self.start_time = 0
+        self.increment = 0
+        self.time_increment_elapsed = 0
+        self.is_active = False
+        self.did_complete = False
+        self.light_color = None
+        self.on_complete = None
+        self.number_of_lights_on = 0
+
+    def duration(self):
+        return self.start_time - self.stop_time
+    
+    def reset(self, completionTime, runDuration, lightCount, matchDuration, color, on_complete):
+        self.is_active = False
+        self.did_complete = False
+        self.stop_time = completionTime
+        self.start_time = completionTime + runDuration
+        if self.start_time > matchDuration:
+            runDuration = self.start_time - matchDuration
+            self.start_time = matchDuration
+        # self.increment = runDuration / lightCount
+        self.number_of_lights_on = 0
+        self.time_increment_elapsed = 0
+        self.color = color
+        self.on_complete = on_complete
+    
+    def on_seconds_tick(self, seconds):
+        if self.did_complete:
+            return
+        if not self.is_active:
+            if self.start_time <= seconds:
+                self.is_active = True
+                self.arena.set_led(0, *self.color)
+                self.time_increment_elapsed += self.increment
+                while self.time_increment_elapsed <= seconds:
+                    self.arena.set_led(self.number_of_lights_on, *self.color)
+                    self.number_of_lights_on += 1
+        else:
+            # turn on any lights that remain.
+            while self.time_increment_elapsed <= seconds:
+                self.arena.set_led(self.number_of_lights_on, *self.color)
+                self.number_of_lights_on += 1
+            if seconds <= self.stop_time:
+                self.did_complete = True
+                self.on_complete()
+        
+    def dump(self, name):
+        print("Stats for", name)
+        print("self.stop_time", self.stop_time)
+        print("self.start_time", self.start_time)
+        print("self.increment", self.increment)
+        print("self.time_increment_elapsed", self.time_increment_elapsed)
+        print("self.is_active", self.is_active)
+        print("self.did_complete", self.did_complete)
+        print("self.light_color", self.light_color)
+        print("self.on_complete", self.on_complete)
+        print("self.number_of_lights_on", self.number_of_lights_on)
+
+    def does_overlap(self, other):
+        return self.stop_time > other.stop_time and other.stop_time < self.start_time
 
 class RunDeathmatchScreen(Screen):
     data = ObjectProperty(None)
     dmData = ObjectProperty(None)
-
-    # The computed amount of time in seconds
-    # until the door should drop.
-    # time_stamp_to_drop_doors_at = NumericProperty(30)
-    # time_stamp_to_start_count_down_lights = NumericProperty(30)
-    # time_stamp_match_over_count_down_start = NumericProperty(30)
-    # disable_door_drop_count_down = BooleanProperty(False)
-
-    # Used to track if we will drop the doors during this match
-    # will_drop_doors = BooleanProperty(False)
+    # cd = count down
+    cd_seconds = NumericProperty(0)
+    cd_lights_on = NumericProperty(0)
 
     # Used to trigger the dropping of the doors
-    # doors_dropped = BooleanProperty(False)
-
-    # door_drop_count_down_increment = NumericProperty(1)
-    # match_over_count_down_increment = NumericProperty(1)
+    doors_closed = BooleanProperty(False)
 
     def __init__(self, **kwargs): 
         self.register_event_type("on_drop_doors")
         super(RunDeathmatchScreen, self).__init__(**kwargs)
+        self.match_over_trigger = CountDownTrigger(App.get_running_app().arena)
+        self.door_drop_trigger = CountDownTrigger(App.get_running_app().arena)
+        self.disable_door_drop_lights = False
+        self.will_drop_doors = False
+        self.cd_animation = None
+        self.cdColor = (200, 255, 0)
 
     def reset_screen(self, app, root):
-        print("Called reset screen!")
-        self.time_stamp_to_drop_doors_at = 0
-        self.time_stamp_to_start_count_down_lights = 0
-        self.time_stamp_match_over_count_down_start = 30
-        self.disable_door_drop_count_down = 0
+        self.dd_seconds = 0
         self.will_drop_doors = False
-        self.doors_dropped = False
-        self.door_drop_count_down_increment = 1
-        self.match_over_count_down_increment = 1
-        self.doors_dropped = False
-        self.disable_door_drop_count_down = False
-        # Calcuating information for count down timer.
-        endingTime = self.time_stamp_match_over_count_down_start
-        self.time_stamp_match_over_count_down_start = 30
-        self.time_stamp_match_over_count_down_start = min([self.dmData.duration,
-                                                            self.time_stamp_match_over_count_down_start])
-        totalLightTime = self.time_stamp_match_over_count_down_start - endingTime
-        self.match_over_count_down_increment = totalLightTime/App.get_running_app().get_led_count()
-        print("time_stamp_match_over_count_down_start = ", self.time_stamp_match_over_count_down_start)
-        print("Value for door drop = ", self.dmData.door_drop)
+        self.match_over_trigger.reset(0, 30,
+            App.get_running_app().get_led_count(),
+            self.dmData.duration,
+            (255,0,0),
+            self.on_complete_match_count_down)
+
         if self.dmData.door_drop == 'Drop Both':
-            print("We will drop both?!")
             self.will_drop_doors = True
         elif self.dmData.door_drop == 'Never drop doors':
             self.will_drop_doors = False
@@ -170,38 +214,52 @@ class RunDeathmatchScreen(Screen):
         else:
             print("Value for door drop = ", self.dmData.door_drop)
         if self.will_drop_doors:
-            self.time_stamp_to_drop_doors_at = self.dmData.duration - self.dmData.door_drop_duration
-            print("self.time_stamp_to_drop_doors_at = ", self.time_stamp_to_drop_doors_at)
+            self.door_drop_trigger.reset(self. dmData.door_drop_duration,
+                15, App.get_running_app().get_led_count(), self.dmData.duration,
+                (200,255,0), self.on_completed_door_drop_count_down)
+            
+            if self.match_over_trigger.does_overlap(self.door_drop_trigger):
+                self.disable_door_drop_lights = True
+                Logger.info("door drop overlaps with match completion timer.")
+                return 
+            # self.match_over_trigger.dump("match_over_trigger")
+            # print("===========================================")
+            # self.door_drop_trigger.dump("door_drop_trigger")
+            # print("===========================================")
 
-            # Checking if the match and door drop timer will overlap.
-            # if they do simply ignore things. 
-            self.time_stamp_to_start_count_down_lights = self.time_stamp_to_drop_doors_at + 15
-            if self.time_stamp_to_start_count_down_lights >= self.time_stamp_match_over_count_down_start:
-                Logger.info("We can't show door drop countdown, end of match and door drop overlap")
-                self.disable_door_drop_count_down = True
-                return
+    def on_completed_door_drop_count_down(self):
+        print("COmpleted door drop count down")
 
-            self.time_stamp_to_start_count_down_lights = min([self.dmData.duration,
-                                                              self.time_stamp_to_start_count_down_lights])
-            # Handling things as time per light, NOT lights per second.
-            totalLightTime = self.time_stamp_to_start_count_down_lights - self.time_stamp_to_drop_doors_at
-            self.door_drop_count_down_increment = totalLightTime/App.get_running_app().get_led_count()
-            self.lights_count_down_active = False
-            print("Will drop doors")
-
+    def on_complete_match_count_down(self):
+        print("Complete match count down")
 
     def on_seconds(self, instance, value):
-        self.text = str(round(self.seconds, 1))
         if self.will_drop_doors:
-            if not self.lights_count_down_active:
-                if self.seconds <= self.time_stamp_to_start_count_down_lights:
-                    print("Lights On")
-                    self.lights_count_down_active = True
-            else:
-                if self.seconds <= self.time_stamp_to_drop_doors_at:
-                    print("Lights Completed")
-                    self.lights_count_down_active = False
-            
+            if not self.door_drop_trigger.is_active:
+                if value <= self.door_drop_trigger.start_time:
+                    self.cd_lights_on = 0
+                    self.prevTick = -1
+                    self.cd_animation = Animation(cd_lights_on=int(App.get_running_app().get_led_count())-1,
+                                                  duration=self.door_drop_trigger.duration(),
+                                                  t="linear")
+                    self.cd_animation.bind(on_complete=self.on_dd_complete)
+                    self.door_drop_trigger.is_active = True
+                    self.cd_animation.start(self)
+                    self.cdColor = self.door_drop_trigger.color
+
+    def on_dd_complete(self, animation, value):
+        # print("Door drop should be complete? triggered at", self.ids.countDownClock.seconds)
+        App.get_running_app().do_door_drop()
+
+    def on_cd_lights_on(self, instance, value):
+        if self.prevTick == -1:
+            self.prevTick = floor(value)
+            App.get_running_app().arena.set_led(self.prevTick, *self.cdColor)
+        elif self.prevTick != floor(value):
+            self.prevTick = int(floor(value))
+            App.get_running_app().arena.set_led(self.prevTick, *self.cdColor)
+
+
     def on_data(self, instance, value):
         pass
 
@@ -831,7 +889,7 @@ class BreathingLights:
             self.color = color
             self.hardware.led_fill(*color)
         self.value = self.min
-        Clock.schedule_interval(self.breathing_brightness_cb, 0.1)
+        Clock.schedule_interval(self.breathing_brightness_cb, self.increment)
 
     def stop(self):
         self.running = False
@@ -865,9 +923,12 @@ class MainApp(App):
         self.arena.init()
         self.breathing_light_control = BreathingLights(self.arena,
                                                        color=self.whiteLight,
-                                                       cycle_time=3.0)
+                                                       min=0.1, max=1.0,
+                                                       cycle_time=2.0)
         self.breathing_light_control.start()
 
+    def on_stop(self):
+        self.arena.shutdown_connection()
 
     def build(self):
         root_widget = ScreenManagement()
@@ -875,11 +936,12 @@ class MainApp(App):
 
     #
     def match_select_enter(self):
-        self.breathing_light_control.start()
+        self.breathing_light_control.start((255, 255, 255))
 
     #
     def match_select_leave(self):
         self.breathing_light_control.stop()
+        self.arena.led_brightness(1)
 
     #
     def lights_off(self):
@@ -888,15 +950,18 @@ class MainApp(App):
 
     #
     def lights_waiting_for_players(self):
-        self.arena.led_fill(0, 255, 128)
+        self.arena.led_fill(255, 0, 255)
+        self.arena.led_brightness(1)
 
     #
     def lights_player_1_ready(self):
-        pass
+        for x in self.arena.player_1_leds:
+            self.arena.set_led(x, 0, 255, 0)
 
     #
     def lights_player_2_ready(self):
-        pass
+        for x in self.arena.player_2_leds:
+            self.arena.set_led(x, 255, 0, 0)
 
     #
     def lights_player_1_door_closed(self):
@@ -936,10 +1001,13 @@ class MainApp(App):
     
     #
     def lights_death_match_config_enter(self):
+        # self.breathing_light_control.start((255, 0, 0))
         pass
     
     #
     def lights_death_match_config_leave(self):
+    #     self.breathing_light_control.stop()
+    #     self.arena.led_brightness(1)
         pass
 
     #
@@ -950,19 +1018,19 @@ class MainApp(App):
     def lights_soccer_config_leave(self):
         pass
 
-    #
+    #Make this green
     def lights_count_down_screen_go(self):
         pass
 
-    #
+    # make this yellow
     def lights_count_down_screen_1(self):
         pass
 
-    #
+    # make this orange
     def lights_count_down_screen_2(self):
         pass
 
-    #
+    # make this red
     def lights_count_down_screen_3(self):
         pass
 
@@ -979,15 +1047,26 @@ class MainApp(App):
         pass
 
     #
-    def lights_door_drop_count_down_lights(self):
-        pass
-
-    # I need to make sure that this gets implemented later.
     def get_led_count(self):
-        return 42
+        return self.arena.get_led_count()
 
+    #
     def do_door_drop(self):
         pass
+        # if self.dmData.door_drop == 'Drop Both':
+        #     self.will_drop_doors = True
+        # elif self.dmData.door_drop == 'Never drop doors':
+        #     self.will_drop_doors = False
+        # elif self.dmData.door_drop == 'Doors Always Open':
+        #     self.will_drop_doors = False
+        # elif self.dmData.door_drop == 'Drop Player 1 Door Only':
+        #     self.will_drop_doors = True
+        # elif self.dmData.door_drop == 'Drop Player 2 Door Only':
+        #     self.will_drop_doors = True
+        # elif self.dmData.door_drop == 'Drop Random Door':
+        #     self.will_drop_doors = True
+        # else:
+        #     print("Value for door drop = ", self.dmData.door_drop)
 
 
 if __name__ == '__main__':
