@@ -18,10 +18,6 @@
 <MainScreen>:
     name: 'main'
     data: app.data
-    on_pre_enter:
-        app.match_select_enter()
-    on_pre_leave:
-        app.match_select_leave()
     GridLayout:
         rows:2
         Label:
@@ -41,7 +37,6 @@
                 text: 'Soccer'
                 font_size: 24
                 on_release:
-                    app.match_select_leave()
                     app.data.soccer_match.reset()
                     app.root.current = 'soccer'
                     root.manager.transition.direction = 'left'
@@ -669,6 +664,7 @@
         app.lights_waiting_for_players()
     on_leave:
         wfp.is_active = False
+
     StackLayout:
         Label:
             size_hint: [1, .1]

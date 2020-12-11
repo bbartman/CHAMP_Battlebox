@@ -16,10 +16,17 @@ class PrintLines(LineReader):
             traceback.print_exc(exc)
         sys.stdout.write('port closed\n')
 
-ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, timeout=1)
+ser = serial.Serial("/dev/ttyUSB0", baudrate=56700, timeout=1)
 with ReaderThread(ser, PrintLines) as protocol:
-  protocol.write_line("<pixels.setBrightness, 255><pixels.fill, 255, 0, 0, 0><pixels.show>")
   time.sleep(2)
+  protocol.write_line("<pixels.reset, 3, 3>")
+  STOP_LIGHT_RED = (255, 0, 0)
+  STOP_LIGHT_ORANGE =	(0, 0, 150)
+  STOP_LIGHT_YELLOW = (239, 200, 0)
+  STOP_LIGHT_GREEN = (0, 132, 80)
+  protocol.write_line("<pixels.setBrightness, 255><pixels.fill, {0}, {1}, {2}, 0><pixels.show>".format(*[int(x) for x in STOP_LIGHT_ORANGE]))
+  time.sleep(2)
+  STOP_LIGHT_RED = ()
   protocol.write_line("<pixels.clear><pixels.show>")
   time.sleep(2)
 

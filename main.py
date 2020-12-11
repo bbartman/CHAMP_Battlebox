@@ -19,17 +19,59 @@ from BattleBox.arena import HardwareInterface
 from kivy.core.window import Window
 from kivy.logger import Logger
 from math import floor
-import platform, re
+import platform, re, random
+from datetime import datetime
 
+random.seed(datetime.now())
+
+# Coloring = Red->Green->Blue
+RED = (255, 0, 0)
+YELLOW = (255, 255, 0)
+GREEN = (0, 255, 0)
+SOCCER_GREEN = (0, 255, 68)
+ORANGE = (255, 68, 0)
+PURPLE = (93, 0, 255)
+BLUE = (0, 0, 255)
+PINK = (255, 0, 149)
+DOOR_NOT_CLOSED_WARNING_COLOR = (255, 174, 0)
+BLUE_PLAYER_COLOR = (0, 110, 255)# Make sure that this looks acceptable.
+RED_PLAYER_COLOR = RED
+STOP_LIGHT_RED = (184, 29, 19)
+STOP_LIGHT_ORANGE =	(218, 83, 10)
+STOP_LIGHT_YELLOW = (239, 183, 0)
+STOP_LIGHT_GREEN = (0, 255, 0)
 
 class MainScreen(Screen):
-    pass
+    lights_brightness = NumericProperty(0)
+
+    def __init__(self, **kwargs): 
+        super(MainScreen, self).__init__(**kwargs)
+        self.Breath = None
+        self.on_enter()
+
+    def on_enter(self):
+        App.get_running_app().arena.led_brightness_and_fill(10, 255, 255, 255)
+        self.lights_brightness = 10
+        self.breath_anim = (Animation(lights_brightness=255,
+                s=1/30, duration=1.0, t="linear") +
+            Animation(lights_brightness=10, s=1/30,
+                duration=1.0, t="linear"))
+        self.breath_anim.repeat = True
+        self.breath_anim.start(self)
+
+    def on_lights_brightness(self, instance, value):
+        App.get_running_app().arena.led_brightness(floor(value))
+
+    def on_pre_leave(self):
+        Animation.cancel_all(self)
+        App.get_running_app().arena.led_brightness(255)
 
 class UIntInput(TextInput):
     pat = re.compile('[^0-9]*')
     def insert_text(self, substring, from_undo=False):
         s = re.sub(self.pat, '', substring)
         return super(UIntInput, self).insert_text(s, from_undo=from_undo)
+
     def on_text(self, instance, value):
         ''' This makes sure the value is never empty and we always have something
         even if it's a zero
@@ -43,10 +85,28 @@ class DeathmatchScreen(Screen):
         self.ids.dm_door_drop.do_update_main_button(app.data.death_match.door_drop)
     
     data = ObjectProperty(None)
+    lights_brightness = NumericProperty()
 
     def __init__(self, **kwargs): 
         super(DeathmatchScreen, self).__init__(**kwargs)
-    
+
+    def on_enter(self):
+        App.get_running_app().arena.led_brightness_and_fill(10, 255, 0, 0)
+        self.lights_brightness = 10
+        self.breath_anim = (Animation(lights_brightness=255,
+                s=1/30, duration=1.0, t="linear") +
+            Animation(lights_brightness=10, s=1/30,
+                duration=1.0, t="linear"))
+        self.breath_anim.repeat = True
+        self.breath_anim.start(self)
+
+    def on_lights_brightness(self, instance, value):
+        App.get_running_app().arena.led_brightness(floor(value))
+
+    def on_pre_leave(self):
+        Animation.cancel_all(self)
+        App.get_running_app().arena.led_brightness(255)
+
     def drop_down_changed(self, instance, x):
         if x == 'Drop Both':
             self.ids.dm_door_drop_duration.disabled = False
@@ -248,7 +308,6 @@ class RunDeathmatchScreen(Screen):
                     self.cdColor = self.door_drop_trigger.color
 
     def on_dd_complete(self, animation, value):
-        # print("Door drop should be complete? triggered at", self.ids.countDownClock.seconds)
         App.get_running_app().do_door_drop()
 
     def on_cd_lights_on(self, instance, value):
@@ -399,7 +458,6 @@ class WaitForPlayers(Screen):
 
     is_active = BooleanProperty(False)
 
-    needs_doors_closed = BooleanProperty(False)
     def __init__(self, **kwargs): 
         self.register_event_type("on_everyone_ready")
         super(WaitForPlayers, self).__init__(**kwargs)
@@ -466,7 +524,6 @@ class WaitForPlayersAndDoors(Screen):
     player_2_ready = BooleanProperty(False)
     player_1_door_closed = BooleanProperty(False)
     player_2_door_closed = BooleanProperty(False)
-    needs_doors_closed = BooleanProperty(False)
     is_active = BooleanProperty(False)
 
     def __init__(self, **kwargs): 
@@ -479,6 +536,10 @@ class WaitForPlayersAndDoors(Screen):
             ready_button=self.on_player_2_pressed_ready_button,
             door_button=self.on_player_2_closed_door)
 
+    def on_leave(self):
+        Animation.cancel_all(self.ids.player_1_door_label)
+        Animation.cancel_all(self.ids.player_2_door_label)
+        
     def on_player_1_pressed_ready_button(self, instance, value):
         if self.is_active and self.player_1_door_closed:
             self.player_1_ready_button_pressed()
@@ -490,10 +551,18 @@ class WaitForPlayersAndDoors(Screen):
     def on_player_1_closed_door(self, instance, value):
         if self.is_active:
             self.player_1_door_closed = value
+            if self.player_1_door_closed:
+                App.get_running_app().close_player_1_door(1)
+            else:
+                App.get_running_app().open_player_1_door(1)
 
     def on_player_2_closed_door(self, instance, value):
         if self.is_active:
             self.player_2_door_closed = value
+            if self.player_2_door_closed:
+                App.get_running_app().close_player_2_door(1)
+            else:
+                App.get_running_app().open_player_2_door(1)
 
     def reset_screen(self, nextScreen, POrT, previousScreen, word):
         self.next_screen_after_ready = nextScreen
@@ -512,11 +581,20 @@ class WaitForPlayersAndDoors(Screen):
         self.player_2_door_closed = App.get_running_app().arena.player_2.door_button
         self.on_player_1_door_closed(None, self.player_1_door_closed)
         self.on_player_2_door_closed(None, self.player_2_door_closed)
+        if self.player_1_door_closed:
+            App.get_running_app().close_player_1_door(1)
+
+        if self.player_2_door_closed:
+            App.get_running_app().close_player_2_door(1)
+
+    def TriggerLateScreenChange(self, Key, *largs):
+        self.dispatch("on_everyone_ready")
 
     def checkForReadyState(self):
         if (self.player_1_ready and self.player_2_ready
                 and self.player_2_door_closed and self.player_2_door_closed):
-            self.dispatch("on_everyone_ready")
+            Clock.schedule_once(self.TriggerLateScreenChange, 0.5 )
+            
 
     def on_next_screen_after_ready(self, instance, value):
         pass
@@ -538,9 +616,10 @@ class WaitForPlayersAndDoors(Screen):
     def on_player_1_ready(self, instance, value):
         if value:
             if not self.player_1_door_closed:
-                App.get_running_app().lights_player_1_needs_to_close_door()
+                App.get_running_app().lights_player_1_needs_to_close_door(self.ids.player_1_door_label)
                 self.player_1_ready = False
                 return
+            Animation.cancel_all(self.ids.player_1_door_label)
             App.get_running_app().lights_player_1_ready()
             self.checkForReadyState()
         self.checkForReadyState()
@@ -548,9 +627,10 @@ class WaitForPlayersAndDoors(Screen):
     def on_player_2_ready(self, instance, value):
         if value:
             if not self.player_2_door_closed:
-                App.get_running_app().lights_player_2_needs_to_close_door()
+                App.get_running_app().lights_player_2_needs_to_close_door(self.ids.player_2_door_label)
                 self.player_2_ready = False
                 return
+            Animation.cancel_all(self.ids.player_2_door_label)
             App.get_running_app().lights_player_2_ready()
             self.checkForReadyState()
         else:
@@ -563,6 +643,7 @@ class WaitForPlayersAndDoors(Screen):
         else:
             self.ids.player_1_door_label.bg_color = RedBGColorList
             self.player_1_ready = False
+            App.get_running_app().lights_player_1_door_opened()
             
 
     def on_player_2_door_closed(self, instance, value):
@@ -572,6 +653,7 @@ class WaitForPlayersAndDoors(Screen):
         else:
             self.ids.player_2_door_label.bg_color = RedBGColorList
             self.player_2_ready = False
+            App.get_running_app().lights_player_2_door_opened()
 
 
 class ScreenManagement(ScreenManager):
@@ -759,6 +841,66 @@ class VictoryScreen(Screen):
         pass
 
 
+
+class FadeTicker(Label):
+    seconds = NumericProperty(3)
+    final_word = StringProperty("FIGHT!!!")
+
+    led_brightness = NumericProperty(10)
+
+    def __init__(self, **kwargs): 
+        self.register_event_type("on_ready")
+        super(FadeTicker, self).__init__(**kwargs)
+    def on_led_brightness(self, instance, value):
+        App.get_running_app().arena.led_brightness(floor(value))
+
+    # FIXME: Color order is wrong.
+    def finish_callback_3(self, animation, Ticker):
+        App.get_running_app().arena.led_brightness_and_fill(10, *STOP_LIGHT_ORANGE)
+        self._do_animation(2, self.finish_callback_2)
+
+    def finish_callback_2(self, animation, Ticker):
+        App.get_running_app().arena.led_brightness_and_fill(10, *STOP_LIGHT_YELLOW)
+        self._do_animation(1, self.finish_callback_1)
+
+    def finish_callback_1(self, animation, Ticker):
+        App.get_running_app().arena.led_brightness_and_fill(10, *STOP_LIGHT_GREEN)
+        self.led_brightness = 10
+        Ticker.text = self.final_word
+        self.color = [1,1,1,1]
+        self.anim = Animation(color=[1,1,1,1], duration=0.3)
+        self.anim &= Animation(led_brightness=255, s=1/30)
+        self.anim.bind(on_complete=self.complete_count_down)
+        self.anim.start(self)
+
+    def complete_count_down(self, animation, Ticker):
+        self.dispatch("on_ready")
+
+    def _do_animation(self, nextValue, nextCB):
+        self.led_brightness = 10
+        self.seconds = nextValue
+        self.color = [1,1,1,0]
+        self.anim = Animation(color=[1,1,1,0.7], duration=1.0)
+        self.anim &= Animation(led_brightness=255, s=1/30)
+        self.on_seconds(None, None)
+        self.anim.bind(on_complete=nextCB)
+        self.anim.start(self)
+
+    def start(self):
+        Animation.cancel_all(self)
+        App.get_running_app().arena.led_brightness_and_fill(10, *STOP_LIGHT_RED)
+        self._do_animation(3, self.finish_callback_3)
+
+    def on_seconds(self, instance, value):
+        self.text = str(int(self.seconds))
+
+    def cancel(self):
+        Animation.cancel_all(self)
+        App.get_running_app().arena.led_brightness(255)
+        
+    def on_ready(self):
+        pass
+
 class CountDownScreen(Screen):
     next = StringProperty()
     previous = StringProperty()
@@ -801,111 +943,12 @@ class DropdownDemo(GridLayout):
     def on_select(self, instance, x):
         pass
 
-class FadeTicker(Label):
-    seconds = NumericProperty(3)
-    final_word = StringProperty("FIGHT!!!")
 
-    def __init__(self, **kwargs): 
-        self.register_event_type("on_ready")
-        super(FadeTicker, self).__init__(**kwargs)
-
-    def finish_callback_1(self, animation, Ticker):
-        App.get_running_app().lights_count_down_screen_2()
-        self._do_animation(2, self.finish_callback_2)
-
-    def finish_callback_2(self, animation, Ticker):
-        App.get_running_app().lights_count_down_screen_1()
-        self._do_animation(1, self.finish_callback_3)
-
-    def finish_callback_3(self, animation, Ticker):
-        Ticker.text = self.final_word
-        self.color = [1,1,1,1]
-        self.anim = Animation(color=[1,1,1,1], duration=0.3)
-        self.anim.bind(on_complete=self.complete_count_down)
-        self.anim.start(self)
-
-    def complete_count_down(self, animation, Ticker):
-        App.get_running_app().lights_count_down_screen_go()
-        self.dispatch("on_ready")
-
-    def _do_animation(self, nextValue, nextCB):
-        self.seconds = nextValue
-        self.color = [1,1,1,0]
-        self.anim = Animation(color=[1,1,1,0.7], duration=1.0)
-        self.on_seconds(None, None)
-        self.anim.bind(on_complete=nextCB)
-        self.anim.start(self)
-
-    def start(self):
-        Animation.cancel_all(self)
-        App.get_running_app().lights_count_down_screen_3()
-        self._do_animation(3, self.finish_callback_1)
-
-    def on_seconds(self, instance, value):
-        self.text = str(int(self.seconds))
-
-    def cancel(self):
-        Animation.cancel_all(self)
-        
-    def on_ready(self):
-        pass
 
 HWProp = HardwareInterface
 if platform.system() != 'Windows':
     from arena.physicalarena import Arena
     HWProp = Arena
-    # TODO: Change the type here so that if I'm not in windows
-    # I can change behavior
-    # pass
-
-class BreathingLights:
-    def __init__(self, hw, **kwargs):
-        assert hw != None, "Missing hardware"
-        self.hardware = hw
-        self.running = False
-        self.increasing = True
-        self.min = kwargs.get("min", 0.3)
-        self.max = kwargs.get("max", 0.9)
-        self.color = kwargs.get("color", (255, 255, 255))
-        assert self.min != self.max, "min and max cannot be the same value."
-        assert self.min < self.max, "Min must be less than max."
-        assert self.min > 0, "Min must be greater than zero"
-        assert self.max <= 1.0, "Max must be less than or equal to 1"
-        if "increment" in kwargs:
-            self.increment = kwargs.get("increment", 0.1)
-        elif "cycle_time" in kwargs:
-            # divide by 10 because we have to make sure that we increment every
-            # 1 tenth of a second and the cycle time should be in seconds.
-            self.increment = ((self.max - self.min)/kwargs["cycle_time"])/10
-        else:
-            self.increment = 0.1
-            
-        
-    def start(self, color=None):
-        self.running = True
-        if color == None:
-            self.hardware.led_fill(*self.color)
-        else:
-            self.color = color
-            self.hardware.led_fill(*color)
-        self.value = self.min
-        Clock.schedule_interval(self.breathing_brightness_cb, self.increment)
-
-    def stop(self):
-        self.running = False
-
-    def breathing_brightness_cb(self, time_delta):
-        if self.running:
-            if self.increasing:
-                self.value += self.increment
-                if self.value >= self.max:
-                    self.increasing = False
-            else:
-                self.value -= self.increment
-                if self.value <= self.min:
-                    self.increasing = True
-            self.hardware.led_brightness(self.value)
-        return self.running
 
 class MainApp(App):
     data = BBViewModelProp()
@@ -921,11 +964,6 @@ class MainApp(App):
         self.whiteLight = (255, 255, 255)
         super(MainApp, self).__init__(**kwargs)
         self.arena.init()
-        self.breathing_light_control = BreathingLights(self.arena,
-                                                       color=self.whiteLight,
-                                                       min=0.1, max=1.0,
-                                                       cycle_time=2.0)
-        self.breathing_light_control.start()
 
     def on_stop(self):
         self.arena.shutdown_connection()
@@ -935,48 +973,43 @@ class MainApp(App):
         return root_widget
 
     #
-    def match_select_enter(self):
-        self.breathing_light_control.start((255, 255, 255))
-
-    #
-    def match_select_leave(self):
-        self.breathing_light_control.stop()
-        self.arena.led_brightness(1)
-
-    #
     def lights_off(self):
-        self.arena.led_fill(0, 0, 0)
-        self.arena.led_brightness(0)
+        self.arena.led_brightness_and_fill(0, 0, 0, 0)
 
     #
     def lights_waiting_for_players(self):
-        self.arena.led_fill(255, 0, 255)
-        self.arena.led_brightness(1)
+        self.arena.led_brightness_and_fill(255, *YELLOW)
 
     #
     def lights_player_1_ready(self):
-        for x in self.arena.player_1_leds:
-            self.arena.set_led(x, 0, 255, 0)
+        self.arena.led_player_1_lights(*RED_PLAYER_COLOR)
 
     #
     def lights_player_2_ready(self):
-        for x in self.arena.player_2_leds:
-            self.arena.set_led(x, 255, 0, 0)
+        self.arena.led_player_2_lights(*BLUE_PLAYER_COLOR)
 
     #
     def lights_player_1_door_closed(self):
-        pass
+        self.arena.led_player_1_lights(*PINK)
+
+    #
+    def lights_player_1_door_opened(self):
+        self.arena.led_player_1_lights(*YELLOW)
 
     #
     def lights_player_2_door_closed(self):
+        self.arena.led_player_2_lights(*PURPLE)
+
+    #
+    def lights_player_2_door_opened(self):
+        self.arena.led_player_2_lights(*YELLOW)
+
+    #
+    def lights_player_1_needs_to_close_door(self, WidgetToAnimate):
         pass
 
     #
-    def lights_player_1_needs_to_close_door(self):
-        pass
-
-    #
-    def lights_player_2_needs_to_close_door(self):
+    def lights_player_2_needs_to_close_door(self, WidgetToAnimate):
         pass
 
     #
@@ -1001,13 +1034,10 @@ class MainApp(App):
     
     #
     def lights_death_match_config_enter(self):
-        # self.breathing_light_control.start((255, 0, 0))
         pass
     
     #
     def lights_death_match_config_leave(self):
-    #     self.breathing_light_control.stop()
-    #     self.arena.led_brightness(1)
         pass
 
     #
@@ -1050,23 +1080,54 @@ class MainApp(App):
     def get_led_count(self):
         return self.arena.get_led_count()
 
+    def close_player_1_door(self):
+        self.arena.close_player_1_door()
+        Clock.schedule_once(self.door_stopper_p1, 1)
+
+    def close_player_2_door(self):
+        self.arena.close_player_2_door()
+        Clock.schedule_once(self.door_stopper_p2, 1)
+
+    def open_player_1_door(self, duration):
+        self.arena.open_player_1_door()
+        Clock.schedule_once(self.door_stopper_p1, duration)
+
+    def open_player_2_door(self, duration):
+        self.arena.open_player_2_door()
+        Clock.schedule_once(self.door_stopper_p2, duration)
+
+    def close_player_1_door(self, duration):
+        self.arena.close_player_1_door()
+        Clock.schedule_once(self.door_stopper_p1, duration)
+
+    def close_player_2_door(self, duration):
+        self.arena.close_player_2_door()
+        Clock.schedule_once(self.door_stopper_p2, duration)
+
+    def door_stopper_p1(self, val):
+        self.arena.stop_player_1_door()
+
+    def door_stopper_p2(self, val):
+        self.arena.stop_player_2_door()
     #
     def do_door_drop(self):
-        pass
-        # if self.dmData.door_drop == 'Drop Both':
-        #     self.will_drop_doors = True
-        # elif self.dmData.door_drop == 'Never drop doors':
-        #     self.will_drop_doors = False
-        # elif self.dmData.door_drop == 'Doors Always Open':
-        #     self.will_drop_doors = False
-        # elif self.dmData.door_drop == 'Drop Player 1 Door Only':
-        #     self.will_drop_doors = True
-        # elif self.dmData.door_drop == 'Drop Player 2 Door Only':
-        #     self.will_drop_doors = True
-        # elif self.dmData.door_drop == 'Drop Random Door':
-        #     self.will_drop_doors = True
-        # else:
-        #     print("Value for door drop = ", self.dmData.door_drop)
+        if self.data.death_match.door_drop == 'Drop Both':
+            self.open_player_1_door(1)
+            self.open_player_2_door(1)
+        elif self.data.death_match.door_drop == 'Never drop doors':
+            pass
+        elif self.data.death_match.door_drop == 'Doors Always Open':
+            pass
+        elif self.data.death_match.door_drop == 'Drop Player 1 Door Only':
+            self.open_player_1_door(1)
+        elif self.data.death_match.door_drop == 'Drop Player 2 Door Only':
+            self.open_player_2_door(1)
+        elif self.data.death_match.door_drop == 'Drop Random Door':
+            if (random.randint() % 2) == 1:
+                self.open_player_1_door(1)
+            else:
+                self.open_player_2_door(1)
+
 
 
 if __name__ == '__main__':

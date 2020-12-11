@@ -1,5 +1,6 @@
 #include <Adafruit_NeoPixel.h>
 #include <errno.h>
+#include <ctype.h>
 
 // Giving some default values here.
 const int LightPin = 3;
@@ -13,82 +14,175 @@ using Color = uint32_t;
 // library colors.
 void setup() {
   Pixels = new Adafruit_NeoPixel(PixelCount, LightPin, NEO_RBG + NEO_KHZ800);
-  Serial.begin(9600);
+  Serial.begin(56700);
   Pixels->begin();
+  Serial.println("ready");
 }
 
-// We allow for a maximum of 5 arguments for any functionaliy.
-const byte numChars = 64;
-char receivedChars[numChars];
-// temporary array for use when parsing
-char tempChars[numChars];
+enum { 
+  ReadingCmd,
+  ReadingArgs,
+  ReadingTillEOL 
+};
 
-// variables to hold the parsed data
-char command[numChars] = {0};
-// int integerFromPC = 0;
-// float floatFromPC = 0.0;
-boolean newData = false;
-
-
-void loop() {
-  recvWithStartEndMarkers();
-  if (newData == true) {
-      strcpy(tempChars, receivedChars);
-          // this temporary copy is necessary to protect the original data
-          //   because strtok() used in parseData() replaces the commas with \0
-      parseData();
-      newData = false;
-  }
-}
-
-void recvWithStartEndMarkers() {
-    static boolean recvInProgress = false;
-    static byte ndx = 0;
-    char startMarker = '<';
-    char endMarker = '>';
-    char rc;
-
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
-
-        if (recvInProgress == true) {
-            if (rc != endMarker) {
-                receivedChars[ndx] = rc;
-                ndx++;
-                if (ndx >= numChars) {
-                    ndx = numChars - 1;
-                }
-            }
-            else {
-                receivedChars[ndx] = '\0'; // terminate the string
-                recvInProgress = false;
-                ndx = 0;
-                newData = true;
-            }
-        }
-
-        else if (rc == startMarker) {
-            recvInProgress = true;
-        }
-    }
-}
+int State = ReadingCmd;
+String Command;
+String IntegerBuffer;
+uint8_t ArgCount = 0;
+int Args[6];
 
 const char *pixels_Reset = "pixels.reset";
 const char *pixels_show = "pixels.show";
 const char *pixels_setPixelColor = "pixels.setPixelColor";
-const char *pixels_getPixelColor = "pixels.getPixelColor";
 const char *pixels_fill = "pixels.fill";
 const char *pixels_clear = "pixels.clear";
 const char *pixels_setBrightness = "pixels.setBrightness";
 const char *pixels_getBrightness = "pixels.getBrightness";
 const char *pixels_getPin = "pixels.getPin";
+const char *pixels_size = "pixels.size";
+
+// const char *pixels_getPixelColor = "pixels.getPixelColor";
 // const char pixels_setPin = "pixels.setPin";
 // const char pixels_getPixels = "pixels.getPixels";
-const char *pixels_size = "pixels.size";
+
+enum {
+  cmd_pixels_Reset,
+  cmd_pixels_show,
+  cmd_pixels_setPixelColor,
+  cmd_pixels_fill,
+  cmd_pixels_clear,
+  cmd_pixels_setBrightness,
+  cmd_pixels_getBrightness,
+  cmd_pixels_getPin,
+  cmd_pixels_size
+};
+
+int parsedCmd = -1;
+
+void loop() {
+  while(Serial.available() > 0) {
+    switch(State) {
+    case ReadingCmd:
+    readCommand();
+    break;
+    case ReadingArgs:
+    readArgs();
+    break;
+    case ReadingTillEOL:
+    readTillEOL();
+    break;
+    default:
+    break;
+    }
+  }
+}
+
+void readCommand() {
+  char C = Serial.read();
+  if (C == '\n') {
+    // This means we reached the end of a command.
+    parsedCmd = decodeCommand();
+    processCommand(parsedCmd);
+    return;
+  }
+
+  if (C == ',') {
+    // parsedCmd
+    parsedCmd = decodeCommand();
+    if(parsedCmd == -1)
+      State = ReadingTillEOL;
+    else {
+      ArgCount = 0;
+      State = ReadingArgs;
+      IntegerBuffer = "";
+    }
+    return;
+  }
+  Command += C;
+}
+
+void readArgs() {
+  char C = Serial.read();
+  if (C == '\n') {
+    if (IntegerBuffer.length() != 0) {
+      Args[ArgCount] = IntegerBuffer.toInt();
+      ++ArgCount;
+      if (ArgCount == 6) {
+        State = ReadingTillEOL;
+        Serial.println("ERR: to many arguments");
+        return;
+      }
+    }
+    // This means we reached the end of a command.
+    processCommand(parsedCmd);
+    return;
+  }
+  if (IntegerBuffer.length() == 0) {
+    if (isspace(C)) return;
+    if (!isdigit(C)) {
+      State = ReadingTillEOL;
+      return;
+    } else {
+      IntegerBuffer += C;
+    }
+  } else {
+    if (C == ',') {
+      Args[ArgCount] = IntegerBuffer.toInt();
+      ++ArgCount;
+      IntegerBuffer = "";
+      if (ArgCount == 6) {
+        State = ReadingTillEOL;
+        Serial.println("ERR: to many arguments");
+      }
+    } else {
+      if (!isdigit(C)) {
+        State = ReadingTillEOL;
+        Serial.println("ERR: Invalid argument format");
+      } else {
+        IntegerBuffer += C;
+      }
+    }
+  }
+}
+
+void readTillEOL() {
+  char C = Serial.read();
+  if (C == '\n') {
+    Serial.print("ERR: invalid command " + Command);
+    State = ReadingCmd;
+    Command = "";
+    ArgCount = 0;
+    return;
+  }
+  Command += C;
+}
+
+int decodeCommand() {
+  if(Command == pixels_Reset) {
+    return cmd_pixels_Reset;
+  } else if(Command == pixels_show) {
+    return cmd_pixels_show;
+  } else if(Command == pixels_setPixelColor) {
+    return cmd_pixels_setPixelColor;
+  } else if(Command == pixels_fill) {
+    return cmd_pixels_fill;
+  } else if(Command == pixels_clear) {
+    return cmd_pixels_clear;
+  } else if(Command == pixels_setBrightness) {
+    return cmd_pixels_setBrightness;
+  } else if(Command == pixels_getBrightness) {
+    return cmd_pixels_getBrightness;
+  } else if(Command == pixels_getPin) {
+    return cmd_pixels_getPin;
+  } else if(Command == pixels_size) {
+    return cmd_pixels_size;
+  } else
+    return -1;
+}
 
 void printIncorrectNumberOfArgumentsError(int Expected, int Actual) {
   Serial.print("ERR: incorrect number of aguments for command ");
-  Serial.print(command);
+  Serial.print(Command);
   Serial.print(" expected ");
   Serial.print(Expected);
   Serial.print(" arguments. Received ");
@@ -99,7 +193,7 @@ void printIncorrectNumberOfArgumentsError(int Expected, int Actual) {
 void printIncorrectNumberOfArgumentsErrorRange(int MinExpected,
                                                int MaxExpected, int Actual) {
   Serial.print("ERR: incorrect number of aguments for command ");
-  Serial.print(command);
+  Serial.print(Command);
   Serial.print(" expected between ");
   Serial.print(MinExpected);
   Serial.print(" - ");
@@ -108,11 +202,12 @@ void printIncorrectNumberOfArgumentsErrorRange(int MinExpected,
   Serial.print(Actual);
   Serial.println(".");
 }
-void logCall(uint8_t *args, int count) {
+
+void logCall(int *args, int count) {
   Serial.print("DEBUG: ");
-  Serial.print(command);
+  Serial.print(Command);
   Serial.print("(");
-  for(int i = 0;i < count;){
+  for(int i = 0;i < count;) {
     Serial.print(args[i]);
     ++i;
     if (i != count) {
@@ -126,42 +221,14 @@ void invalidPixelInstance() {
   Serial.println("ERR: unable to process command invalid pixel reference");
 }
 
-void parseData() {
 
-   // this is used by strtok() as an index
-  char * strtokIndx;
-  errno = 0;
-
-  // get the first part - the string
-  strtokIndx = strtok(tempChars, ",");
-
-  // copy it to command
-  strcpy(command, strtokIndx);
-
-  uint8_t ArgCount = 0;
-  uint8_t Args[5] = {0, 0, 0, 0, 0};
-  strtokIndx = strtok(NULL, " ");
-  while (strtokIndx && ArgCount < 5) {
-    errno = 0;
-    Args[ArgCount] = atoi(strtokIndx);
-    if (errno != 0) {
-      Serial.println("ERR: Invalid Command");
-      return;
-    }
-    ++ArgCount;
-    strtokIndx = strtok(NULL, " ");
-  }
-
-  // We received to many arguments and were unable to fully process them.
-  if (strtokIndx && ArgCount == 5) {
-    Serial.println("ERR: To many arguments");
-    return;
-  }
+void processCommand(int Cmd) {
   logCall(Args, ArgCount);
-  if(strcmp(command, pixels_Reset) == 0) {
+  switch(Cmd) {
+  case cmd_pixels_Reset:
     if (ArgCount != 2) {
       printIncorrectNumberOfArgumentsError(2, ArgCount);
-      return;
+      break;
     }
     if (Pixels){
       delete Pixels;
@@ -177,29 +244,29 @@ void parseData() {
     } else {
       Serial.println("ERR: failed to create a new neopixel instance.");
     }
-
-
-  } else if(strcmp(command, pixels_show) == 0) {
+    break;
+    
+  case cmd_pixels_show:
     if (ArgCount != 0) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
-      return;
+      break;
     }
     if (!Pixels) {
       invalidPixelInstance();
-      return;
+      break;
     }
     Pixels->show();
     Serial.println("OK");
+    break;
 
-
-  } else if(strcmp(command, pixels_setPixelColor) == 0) {
+  case cmd_pixels_setPixelColor:
     if (ArgCount < 4 || ArgCount > 5) {
       printIncorrectNumberOfArgumentsErrorRange(4, 5, ArgCount);
-      return;
+      break;
     }
     if (!Pixels) {
       invalidPixelInstance();
-      return;
+      break;
     }
     if (ArgCount == 4) {
       Pixels->setPixelColor(Args[0], Args[1], Args[2], Args[3]);
@@ -207,18 +274,16 @@ void parseData() {
       Pixels->setPixelColor(Args[0], Args[1], Args[2], Args[3], Args[4]);
     }
     Serial.println("OK");
-  // } else if(strcmp(command, pixels_getPixelColor) == 0) {
+    break;
     
-
-
-  } else if(strcmp(command, pixels_fill) == 0) {
+  case cmd_pixels_fill:
     if (ArgCount < 4 || ArgCount > 5) {
       printIncorrectNumberOfArgumentsErrorRange(4, 5, ArgCount);
-      return;
+      break;
     }
     if (!Pixels) {
       invalidPixelInstance();
-      return;
+      break;
     }
     if (ArgCount == 4) {
       Pixels->fill(Adafruit_NeoPixel::Color(Args[0], Args[1], Args[2]),
@@ -228,98 +293,210 @@ void parseData() {
                    Args[3], Args[4]);
     }
     Serial.println("OK");
+    break;
 
-  } else if(strcmp(command, pixels_clear) == 0) {
+  case cmd_pixels_clear:
     if (ArgCount != 0) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
-      return;
+      break;
     }
+
     if (!Pixels) {
       invalidPixelInstance();
-      return;
+      break;
     }
     Pixels->clear();
     Serial.println("OK");
+    break;
 
-
-  } else if(strcmp(command, pixels_setBrightness) == 0) {
+  case cmd_pixels_setBrightness:
     if (ArgCount != 1) {
       printIncorrectNumberOfArgumentsError(1, ArgCount);
-      return;
+      break;
     }
     if (!Pixels) {
       invalidPixelInstance();
-      return;
+      break;
     }
     Pixels->setBrightness(Args[0]);
     Serial.println("OK");
+    break;
 
-
-  } else if(strcmp(command, pixels_getBrightness) == 0) {
+  case cmd_pixels_getPin:
     if (ArgCount != 0) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
-      return;
+      break;
     }
     if (!Pixels) {
       invalidPixelInstance();
-      return;
-    }
-    Serial.print("OK: ");
-    Serial.println(Pixels->getBrightness());
-
-
-  } else if(strcmp(command, pixels_getPin) == 0) {
-    if (ArgCount != 0) {
-      printIncorrectNumberOfArgumentsError(0, ArgCount);
-      return;
-    }
-    if (!Pixels) {
-      invalidPixelInstance();
-      return;
+      break;
     }
     Serial.print("OK: ");
     Serial.println(Pixels->getPin());
-  // } else if(strcmp(command, pixels_setPin) == 0) {
-    
-  // } else if(strcmp(command, pixels_getPixels) == 0) {
-    
-  } else if(strcmp(command, pixels_size) == 0) {
+    break;
+
+  case cmd_pixels_size:
     if (ArgCount != 0) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
-      return;
+      break;
     }
     if (!Pixels) {
       invalidPixelInstance();
-      return;
+      break;
     }
     Serial.print("OK: ");
     Serial.println(Pixels->numPixels());
+    break;
 
-
-  } else {
-    Serial.print("ERR: invalid command ");
-    Serial.println(command);
-    return;
+  default:
+    Serial.println("ERR: unknown command " + Command);
+    break;
   }
-//   void              begin(void);
-//   void              show(void);
-//   void              setPin(uint16_t p);
-//   void              setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
-//   void              setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b,
-//                       uint8_t w);
-//   void              setPixelColor(uint16_t n, uint32_t c);
-//   void              fill(uint32_t c=0, uint16_t first=0, uint16_t count=0);
-//   void              setBrightness(uint8_t);
-//   void              clear(void);
-//   void              setPin(uint16_t p);
-// uint8_t           getBrightness(void) const;
-// int16_t           getPin(void) const { return pin; };
-// uint16_t          numPixels(void) const { return numLEDs; }
-// uint32_t          getPixelColor(uint16_t n) const;
-  // }
-  // strtokIndx = strtok(NULL, " ");
-  // floatFromPC = atof(strtokIndx);     // convert this part to a float
+  Command = "";
+  ArgCount = 0;
+  State = ReadingCmd;
 }
+// void recvWithStartEndMarkers() {
+//     static boolean recvInProgress = false;
+//     static byte ndx = 0;
+//     char startMarker = '<';
+//     char endMarker = '>';
+//     char rc;
+
+//     while (Serial.available() > 0 && newData == false) {
+//         rc = Serial.read();
+
+//         if (recvInProgress == true) {
+//             if (rc != endMarker) {
+//                 receivedChars[ndx] = rc;
+//                 ndx++;
+//                 if (ndx >= numChars) {
+//                     ndx = numChars - 1;
+//                 }
+//             }
+//             else {
+//                 receivedChars[ndx] = '\0'; // terminate the string
+//                 recvInProgress = false;
+//                 ndx = 0;
+//                 newData = true;
+//             }
+//         }
+
+//         else if (rc == startMarker) {
+//             recvInProgress = true;
+//         }
+//     }
+// }
+
+
+
+// void parseData() {
+
+//    // this is used by strtok() as an index
+//   char * strtokIndx;
+//   errno = 0;
+
+//   // get the first part - the string
+//   strtokIndx = strtok(tempChars, ",");
+
+//   // copy it to command
+//   strcpy(command, strtokIndx);
+
+//   uint8_t ArgCount = 0;
+//   uint8_t Args[5] = {0, 0, 0, 0, 0};
+//   strtokIndx = strtok(NULL, " ");
+//   while (strtokIndx && ArgCount < 5) {
+//     errno = 0;
+//     Args[ArgCount] = atoi(strtokIndx);
+//     if (errno != 0) {
+//       Serial.println("ERR: Invalid Command");
+//       return;
+//     }
+//     ++ArgCount;
+//     strtokIndx = strtok(NULL, " ");
+//   }
+
+//   // We received to many arguments and were unable to fully process them.
+//   if (strtokIndx && ArgCount == 5) {
+//     Serial.println("ERR: To many arguments");
+//     return;
+//   }
+
+
+//   } else if(strcmp(command, pixels_show) == 0) {
+//     if (ArgCount != 0) {
+//       printIncorrectNumberOfArgumentsError(0, ArgCount);
+//       return;
+//     }
+//     if (!Pixels) {
+//       invalidPixelInstance();
+//       return;
+//     }
+//     Pixels->show();
+//     Serial.println("OK");
+
+
+//   } else if(strcmp(command, pixels_setPixelColor) == 0) {
+
+    
+
+
+//   } else if(strcmp(command, pixels_fill) == 0) {
+
+
+//   } else if(strcmp(command, pixels_clear) == 0) {
+
+
+
+//   } else if(strcmp(command, pixels_setBrightness) == 0) {
+
+
+
+//   } else if(strcmp(command, pixels_getBrightness) == 0) {
+
+//   } else if(strcmp(command, pixels_getPin) == 0) {
+
+//   // } else if(strcmp(command, pixels_setPin) == 0) {
+    
+//   // } else if(strcmp(command, pixels_getPixels) == 0) {
+    
+//   } else if(strcmp(command, pixels_size) == 0) {
+//     if (ArgCount != 0) {
+//       printIncorrectNumberOfArgumentsError(0, ArgCount);
+//       return;
+//     }
+//     if (!Pixels) {
+//       invalidPixelInstance();
+//       return;
+//     }
+//     Serial.print("OK: ");
+//     Serial.println(Pixels->numPixels());
+
+
+//   } else {
+//     Serial.print("ERR: invalid command ");
+//     Serial.println(command);
+//     return;
+//   }
+// //   void              begin(void);
+// //   void              show(void);
+// //   void              setPin(uint16_t p);
+// //   void              setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
+// //   void              setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b,
+// //                       uint8_t w);
+// //   void              setPixelColor(uint16_t n, uint32_t c);
+// //   void              fill(uint32_t c=0, uint16_t first=0, uint16_t count=0);
+// //   void              setBrightness(uint8_t);
+// //   void              clear(void);
+// //   void              setPin(uint16_t p);
+// // uint8_t           getBrightness(void) const;
+// // int16_t           getPin(void) const { return pin; };
+// // uint16_t          numPixels(void) const { return numLEDs; }
+// // uint32_t          getPixelColor(uint16_t n) const;
+//   // }
+//   // strtokIndx = strtok(NULL, " ");
+//   // floatFromPC = atof(strtokIndx);     // convert this part to a float
+// }
 
 // //============
 

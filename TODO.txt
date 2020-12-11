@@ -1,29 +1,25 @@
-Things to do:
-1. Figure out the libraries that I'll need in order to operatate the pi side of things.
+Documentation Links
 	a. Neopixel lights library https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel
 	b. gpio zero - documentation https://gpiozero.readthedocs.io/en/stable/
 		- Library https://github.com/gpiozero/gpiozero
 
 2. Environment stuff
 	- Figure out how to launch kivy in full screen.
-	- Figure out if we can use a config file for some of the default values within the project
 	- Figure out how to run 2 kivy apps at the same time in full screen on two different
 		screens at the same time.
-	- Check into the automatic keyboard popup for kivy text input windows.
 
-3. Make the death match stuff work the way it's supposed to.
-4. try and get things working on the pi.
 
 Arena TODOS:
 1. Lights:
-	1. Lights on.
 	2. Lights for idle.
 		A. Turning off lights for idle.
 	3. Lights for waiting for players.
-	4. Lights for player 1 ready.
-	5. Lights for player 2 ready.
+		- Door closed screen
+		- Non-door closed screen
+	5. Lights for player 1 & 2 ready.
+		- I need to verify this when using more lights then 1.
 	6. Lights for door drop.
-	7. Lights for time remaining in match? Should we have a count down to end of match?
+		- I need to verify this when the match timer and the door drop timer overlap.
 	8. Lights for team
 		A. Team 1 Goal
 		B. Team 2 Goal
@@ -32,18 +28,23 @@ Arena TODOS:
 	11. Lights for team 1/2 wins soccer
 	12. Lights for soccer match tie
 	13. Lights for game countdown.
+		- Partially implemented.
+		- All this needs is a variable.
+
 	14. Ligths for game selection.
 	15. Lights for configuring death match.
 	16. Lights for configuring soccer.
 	17. Lights for waiting for players to close doors.
 	18. Lights for waiting for players to press ready.
 	19. Lights for doors not closed when player presses ready.
-2. Buttons
-	1. Read when player ready button changed.
-		a. Be able to cancel/resume when we are reading button changes.
-		b. Make sure we aren't always reading button changes.
-	2. Read when door closed changes when it's suppsoed to be.
-		a. Make sure to be able to cancel or ignore and resume these events.
-		b. Make sure doors are closed for specific configurations of death match
-		c. Make sure to change lights when if the door needs to be closed before
+	20. Doors - lights Make sure to change lights when if the door needs to be closed before
 		   the match can begin and they are not closed.
+
+
+21 . Rewrite all light related actions acdnd match timers interms of animations
+		this will make it easier to cancel some actions. Speicifically the open/close door actions.
+		- Consider handling this animation for death match also, this would be so we can
+		Set it and forget it. for the door drop and other related actions.
+
+*** Create a synchronous send receive for arduino communication that's handled outside of the event loop.
+		- Or possibly inside of the event loop, but non-blocking?
