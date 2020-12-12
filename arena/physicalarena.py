@@ -10,36 +10,37 @@ from BattleBox.arena import Player
 from kivy.event import EventDispatcher
 from kivy.logger import Logger
 from serial.threaded import LineReader, ReaderThread
+from arena.arduinocommunicator import ArduinoCommunicator
 
-class ArduinoReceiver(LineReader):
-    def __init__(self, arena, **kwargs):
-        super(ArduinoReceiver, self).__init__(**kwargs)
-        self.arena = arena
-        self.received_ready_command = False
+# class ArduinoReceiver(LineReader):
+#     def __init__(self, arena, **kwargs):
+#         super(ArduinoReceiver, self).__init__(**kwargs)
+#         self.arena = arena
+#         self.received_ready_command = False
 
-    def connection_made(self, transport):
-        super(ArduinoReceiver, self).connection_made(transport)
-        Logger.info("Connected to arduino")
+#     def connection_made(self, transport):
+#         super(ArduinoReceiver, self).connection_made(transport)
+#         Logger.info("Connected to arduino")
 
-    def handle_line(self, data):
-        if not self.received_ready_command:
-            # print(data)
-            if data == "ready":
-                self.arena.mutex.acquire()
-                self.arena.arduino_ready = True
-                self.arena.mutex.release()
-                Logger.info("Received ready command from arduino")
-                self.received_ready_command = True
-            else:
-                Logger.info("unknown response from arduino", data)
-        if ((data.startswith("OK") and not data.startswith("OK:") )or(data.startswith("DEBUG:"))):
-            return
-        Logger.info("line received {0}\n".format(repr(data).strip()))
+#     def handle_line(self, data):
+#         if not self.received_ready_command:
+#             # print(data)
+#             if data == "ready":
+#                 self.arena.mutex.acquire()
+#                 self.arena.arduino_ready = True
+#                 self.arena.mutex.release()
+#                 Logger.info("Received ready command from arduino")
+#                 self.received_ready_command = True
+#             else:
+#                 Logger.info("unknown response from arduino", data)
+#         if ((data.startswith("OK") and not data.startswith("OK:") )or(data.startswith("DEBUG:"))):
+#             return
+#         Logger.info("line received {0}\n".format(repr(data).strip()))
 
-    def connection_lost(self, exc):
-        if exc:
-            traceback.print_exc(exc)
-        Logger.info("disconnected from arduino.")
+#     def connection_lost(self, exc):
+#         if exc:
+#             traceback.print_exc(exc)
+#         Logger.info("disconnected from arduino.")
 
 def parseLEDRanges(ledRanges):
     items = set()
@@ -173,39 +174,30 @@ class Arena(EventDispatcher):
         self.player_2.ready_button = self.player_2_ready_button.pressed
         self.player_2.door_button = self.player_2_door_sensor.pressed
         
-        self.mutex = threading.Lock()
-        self.arduino_ready = False
+        # self.mutex = threading.Lock()
+        # self.arduino_ready = False
         # Setting up arduino communication
         self.serial_arduino = serial.Serial(
             Config.get("arena", "led_arduino_com", fallback="/dev/ttyUSB0"),
             int(Config.get("arena", "arduino_baud_rate", fallback=115200)),
             timeout=float(Config.get("arena", "arduino_time_out", fallback=0.5)),
             rtscts=True)
-        def createReceiver(**kwargs):
-            return ArduinoReceiver(self, **kwargs)
-        self.lights_response_receiver = ReaderThread(self.serial_arduino,
-                                                     createReceiver)
-        self.lights_protocol = self.lights_response_receiver.__enter__()
-        self.lights_protocol_and_transport = self.lights_response_receiver.connect()
-        while True:
-            self.mutex.acquire()
-            if self.arduino_ready:
-                self.mutex.release()
-                break
-            self.mutex.release()
-            time.sleep(0.1)
+        self.arduino = ArduinoCommunicator(self.serial_arduino)
+        while not self.arduino.is_ready:
+            time.sleep(0.01)
 
-        # print(self.lights_protocol_and_transport)
-        self.lights_protocol.write_line("pixels.reset, {0}, {1}".format(
+        self.arduino.write_line("pixels.reset, {0}, {1}".format(
             self.led_light_count, int(Config.get("arena", "arduino_lights_pin")) ))
+
         atexit.register(self.turn_off_lights)
 
     def turn_off_lights(self):
-        self.lights_protocol.write_line("pixels.clear")
-        self.lights_protocol.write_line("pixels.show")
+        self.arduino.write_line("pixels.clear")
+        self.arduino.write_line("pixels.show")
 
     def shutdown_connection(self):
-        self.lights_response_receiver.stop()
+        self.arduino.stop()
+
 
     @mainthread
     def player_1_ready_button_pressed(self):
@@ -243,44 +235,44 @@ class Arena(EventDispatcher):
         pass
 
     def set_led(self, index, red, green, blue):
-        self.lights_protocol.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
+        self.arduino.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
             int(index), int(red), int(blue), int(green) ))
-        self.lights_protocol.write_line("pixels.show")
+        self.arduino.write_line("pixels.show")
 
     def led_fill(self, red, green, blue):
-        self.lights_protocol.write_line("pixels.fill, {0}, {1}, {2}, 0".format(
+        self.arduino.write_line("pixels.fill, {0}, {1}, {2}, 0".format(
             int(red), int(blue), int(green) ))
-        self.lights_protocol.write_line("pixels.show")
+        self.arduino.write_line("pixels.show")
 
     def led_brightness_and_fill(self, brightness, red, green, blue):
-        self.lights_protocol.write_line("pixels.fill, {0}, {1}, {2}, 0".format(
+        self.arduino.write_line("pixels.fill, {0}, {1}, {2}, 0".format(
             int(red), int(blue), int(green) ))
-        self.lights_protocol.write_line("pixels.setBrightness, {0}".format( int(brightness) ))
-        self.lights_protocol.write_line("pixels.show")
+        self.arduino.write_line("pixels.setBrightness, {0}".format( int(brightness) ))
+        self.arduino.write_line("pixels.show")
 
     def led_n_fill(self, red, green, blue, start=0, count=-1):
         if count < -1:
             count = self.led_light_count
-        self.lights_protocol.write_line("pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
+        self.arduino.write_line("pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
             int(red), int(blue), int(green), int(start), int(count) ))
-        self.lights_protocol.write_line("pixels.show")
+        self.arduino.write_line("pixels.show")
 
     def led_player_1_lights(self, red, green, blue):
         for x in self.player_1_leds:
-            self.lights_protocol.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
+            self.arduino.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
                                             int(x), int(red), int(blue), int(green)))
-        self.lights_protocol.write_line("pixels.show")
+        self.arduino.write_line("pixels.show")
 
     def led_player_2_lights(self, red, green, blue):
         for x in self.player_2_leds:
-            self.lights_protocol.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
+            self.arduino.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
                                             int(x), int(red), int(blue), int(green)))
-        self.lights_protocol.write_line("pixels.show")
+        self.arduino.write_line("pixels.show")
 
     def led_brightness(self, brightness):
-        self.lights_protocol.write_line("pixels.setBrightness, {0}".format(
+        self.arduino.write_line("pixels.setBrightness, {0}".format(
                                         int(brightness)) )
-        self.lights_protocol.write_line("pixels.show")
+        self.arduino.write_line("pixels.show")
 
     def get_led_count(self):
         return self.led_light_count

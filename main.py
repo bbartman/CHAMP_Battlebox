@@ -1,5 +1,5 @@
 from kivy.config import Config
-Config.set('kivy', 'keyboard_mode', 'systemanddock')
+# Config.set('kivy', 'keyboard_mode', 'systemanddock')
 Config.read("BattleBox.ini")
 from kivy.app import App
 from kivy.animation import Animation
@@ -41,6 +41,7 @@ STOP_LIGHT_ORANGE =	(218, 83, 10)
 STOP_LIGHT_YELLOW = (239, 183, 0)
 STOP_LIGHT_GREEN = (0, 255, 0)
 
+BrightnessPerMillis = 1/15
 class MainScreen(Screen):
     lights_brightness = NumericProperty(0)
 
@@ -53,8 +54,8 @@ class MainScreen(Screen):
         App.get_running_app().arena.led_brightness_and_fill(10, 255, 255, 255)
         self.lights_brightness = 10
         self.breath_anim = (Animation(lights_brightness=255,
-                s=1/30, duration=1.0, t="linear") +
-            Animation(lights_brightness=10, s=1/30,
+                s=BrightnessPerMillis, duration=1.0, t="linear") +
+            Animation(lights_brightness=10, s=BrightnessPerMillis,
                 duration=1.0, t="linear"))
         self.breath_anim.repeat = True
         self.breath_anim.start(self)
@@ -94,8 +95,8 @@ class DeathmatchScreen(Screen):
         App.get_running_app().arena.led_brightness_and_fill(10, 255, 0, 0)
         self.lights_brightness = 10
         self.breath_anim = (Animation(lights_brightness=255,
-                s=1/30, duration=1.0, t="linear") +
-            Animation(lights_brightness=10, s=1/30,
+                s=BrightnessPerMillis, duration=1.0, t="linear") +
+            Animation(lights_brightness=10, s=BrightnessPerMillis,
                 duration=1.0, t="linear"))
         self.breath_anim.repeat = True
         self.breath_anim.start(self)
@@ -869,7 +870,7 @@ class FadeTicker(Label):
         Ticker.text = self.final_word
         self.color = [1,1,1,1]
         self.anim = Animation(color=[1,1,1,1], duration=0.3)
-        self.anim &= Animation(led_brightness=255, s=1/30)
+        self.anim &= Animation(led_brightness=255, s=BrightnessPerMillis)
         self.anim.bind(on_complete=self.complete_count_down)
         self.anim.start(self)
 
@@ -881,7 +882,7 @@ class FadeTicker(Label):
         self.seconds = nextValue
         self.color = [1,1,1,0]
         self.anim = Animation(color=[1,1,1,0.7], duration=1.0)
-        self.anim &= Animation(led_brightness=255, s=1/30)
+        self.anim &= Animation(led_brightness=255, s=BrightnessPerMillis)
         self.on_seconds(None, None)
         self.anim.bind(on_complete=nextCB)
         self.anim.start(self)

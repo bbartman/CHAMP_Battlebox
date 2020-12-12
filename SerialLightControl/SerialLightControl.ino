@@ -242,11 +242,7 @@ void processCommand(int Cmd) {
     Pixels = new Adafruit_NeoPixel(Args[0], Args[1], NEO_GRB + NEO_KHZ800);;
     if (Pixels) {
       Pixels->begin();
-      Serial.print("OK: Attempting to create new neopixel with ");
-      Serial.print(Args[0]);
-      Serial.print(" Lights using pin ");
-      Serial.print(Args[1]);
-      Serial.println();
+      Serial.println("OK");
     } else {
       Serial.println("ERR: failed to create a new neopixel instance.");
     }
