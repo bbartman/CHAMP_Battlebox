@@ -178,8 +178,9 @@ class Arena(EventDispatcher):
         # Setting up arduino communication
         self.serial_arduino = serial.Serial(
             Config.get("arena", "led_arduino_com", fallback="/dev/ttyUSB0"),
-            int(Config.get("arena", "arduino_baud_rate", fallback=56700)),
-            timeout=float(Config.get("arena", "arduino_time_out", fallback=0.5)))
+            int(Config.get("arena", "arduino_baud_rate", fallback=115200)),
+            timeout=float(Config.get("arena", "arduino_time_out", fallback=0.5)),
+            rtscts=True)
         def createReceiver(**kwargs):
             return ArduinoReceiver(self, **kwargs)
         self.lights_response_receiver = ReaderThread(self.serial_arduino,
@@ -195,12 +196,13 @@ class Arena(EventDispatcher):
             time.sleep(0.1)
 
         # print(self.lights_protocol_and_transport)
-        self.lights_protocol.write_line("<pixels.reset, {0}, {1}>".format(
+        self.lights_protocol.write_line("pixels.reset, {0}, {1}".format(
             self.led_light_count, int(Config.get("arena", "arduino_lights_pin")) ))
         atexit.register(self.turn_off_lights)
 
     def turn_off_lights(self):
-        self.lights_protocol.write_line("<pixels.clear><pixels.show>")
+        self.lights_protocol.write_line("pixels.clear")
+        self.lights_protocol.write_line("pixels.show")
 
     def shutdown_connection(self):
         self.lights_response_receiver.stop()
@@ -241,42 +243,44 @@ class Arena(EventDispatcher):
         pass
 
     def set_led(self, index, red, green, blue):
-        self.lights_protocol.write_line("<pixels.setPixelColor, {0}, {1}, {2}, {3}><pixels.show>".format(
+        self.lights_protocol.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
             int(index), int(red), int(blue), int(green) ))
+        self.lights_protocol.write_line("pixels.show")
 
     def led_fill(self, red, green, blue):
-        self.lights_protocol.write_line("<pixels.fill, {0}, {1}, {2}, 0><pixels.show>".format(
+        self.lights_protocol.write_line("pixels.fill, {0}, {1}, {2}, 0".format(
             int(red), int(blue), int(green) ))
+        self.lights_protocol.write_line("pixels.show")
 
     def led_brightness_and_fill(self, brightness, red, green, blue):
-        self.lights_protocol.write_line("<pixels.fill, {0}, {1}, {2}, 0><pixels.setBrightness, {3}><pixels.show>".format(
-            int(red), int(blue), int(green), int(brightness) ))
+        self.lights_protocol.write_line("pixels.fill, {0}, {1}, {2}, 0".format(
+            int(red), int(blue), int(green) ))
+        self.lights_protocol.write_line("pixels.setBrightness, {0}".format( int(brightness) ))
+        self.lights_protocol.write_line("pixels.show")
 
     def led_n_fill(self, red, green, blue, start=0, count=-1):
         if count < -1:
             count = self.led_light_count
-        self.lights_protocol.write_line("<pixels.fill, {0}, {1}, {2}, {3}, {4}><pixels.show>".format(
+        self.lights_protocol.write_line("pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
             int(red), int(blue), int(green), int(start), int(count) ))
+        self.lights_protocol.write_line("pixels.show")
 
     def led_player_1_lights(self, red, green, blue):
-        self.lights_protocol.write_line(
-                "".join([
-                    "<pixels.setPixelColor, {0}, {1}, {2}, {3}>".format(
-                            int(x), int(red), int(blue), int(green)
-                    ) for x in self.player_1_leds])
-                    + "<pixels.show>")
+        for x in self.player_1_leds:
+            self.lights_protocol.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
+                                            int(x), int(red), int(blue), int(green)))
+        self.lights_protocol.write_line("pixels.show")
 
     def led_player_2_lights(self, red, green, blue):
-        self.lights_protocol.write_line(
-                "".join([
-                    "<pixels.setPixelColor, {0}, {1}, {2}, {3}>".format(
-                            int(x), int(red), int(blue), int(green)
-                    ) for x in self.player_2_leds])
-                    + "<pixels.show>")
+        for x in self.player_2_leds:
+            self.lights_protocol.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
+                                            int(x), int(red), int(blue), int(green)))
+        self.lights_protocol.write_line("pixels.show")
 
     def led_brightness(self, brightness):
-        self.lights_protocol.write_line("<pixels.setBrightness, {0}><pixels.show>".format(
-            int(brightness)) )
+        self.lights_protocol.write_line("pixels.setBrightness, {0}".format(
+                                        int(brightness)) )
+        self.lights_protocol.write_line("pixels.show")
 
     def get_led_count(self):
         return self.led_light_count

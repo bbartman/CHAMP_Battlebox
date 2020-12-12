@@ -14,7 +14,7 @@ using Color = uint32_t;
 // library colors.
 void setup() {
   Pixels = new Adafruit_NeoPixel(PixelCount, LightPin, NEO_RBG + NEO_KHZ800);
-  Serial.begin(56700);
+  Serial.begin(115200);
   Pixels->begin();
   Serial.println("ready");
 }
@@ -79,7 +79,12 @@ void loop() {
 
 void readCommand() {
   char C = Serial.read();
+  if (C == '\r')
+    return;
+
   if (C == '\n') {
+    if (Command.length() == 0)
+      return;
     // This means we reached the end of a command.
     parsedCmd = decodeCommand();
     processCommand(parsedCmd);
@@ -103,6 +108,7 @@ void readCommand() {
 
 void readArgs() {
   char C = Serial.read();
+  if (C == '\r') return;
   if (C == '\n') {
     if (IntegerBuffer.length() != 0) {
       Args[ArgCount] = IntegerBuffer.toInt();
@@ -148,7 +154,7 @@ void readArgs() {
 void readTillEOL() {
   char C = Serial.read();
   if (C == '\n') {
-    Serial.print("ERR: invalid command " + Command);
+    Serial.println("ERR: invalid command " + Command);
     State = ReadingCmd;
     Command = "";
     ArgCount = 0;
@@ -356,155 +362,3 @@ void processCommand(int Cmd) {
   ArgCount = 0;
   State = ReadingCmd;
 }
-// void recvWithStartEndMarkers() {
-//     static boolean recvInProgress = false;
-//     static byte ndx = 0;
-//     char startMarker = '<';
-//     char endMarker = '>';
-//     char rc;
-
-//     while (Serial.available() > 0 && newData == false) {
-//         rc = Serial.read();
-
-//         if (recvInProgress == true) {
-//             if (rc != endMarker) {
-//                 receivedChars[ndx] = rc;
-//                 ndx++;
-//                 if (ndx >= numChars) {
-//                     ndx = numChars - 1;
-//                 }
-//             }
-//             else {
-//                 receivedChars[ndx] = '\0'; // terminate the string
-//                 recvInProgress = false;
-//                 ndx = 0;
-//                 newData = true;
-//             }
-//         }
-
-//         else if (rc == startMarker) {
-//             recvInProgress = true;
-//         }
-//     }
-// }
-
-
-
-// void parseData() {
-
-//    // this is used by strtok() as an index
-//   char * strtokIndx;
-//   errno = 0;
-
-//   // get the first part - the string
-//   strtokIndx = strtok(tempChars, ",");
-
-//   // copy it to command
-//   strcpy(command, strtokIndx);
-
-//   uint8_t ArgCount = 0;
-//   uint8_t Args[5] = {0, 0, 0, 0, 0};
-//   strtokIndx = strtok(NULL, " ");
-//   while (strtokIndx && ArgCount < 5) {
-//     errno = 0;
-//     Args[ArgCount] = atoi(strtokIndx);
-//     if (errno != 0) {
-//       Serial.println("ERR: Invalid Command");
-//       return;
-//     }
-//     ++ArgCount;
-//     strtokIndx = strtok(NULL, " ");
-//   }
-
-//   // We received to many arguments and were unable to fully process them.
-//   if (strtokIndx && ArgCount == 5) {
-//     Serial.println("ERR: To many arguments");
-//     return;
-//   }
-
-
-//   } else if(strcmp(command, pixels_show) == 0) {
-//     if (ArgCount != 0) {
-//       printIncorrectNumberOfArgumentsError(0, ArgCount);
-//       return;
-//     }
-//     if (!Pixels) {
-//       invalidPixelInstance();
-//       return;
-//     }
-//     Pixels->show();
-//     Serial.println("OK");
-
-
-//   } else if(strcmp(command, pixels_setPixelColor) == 0) {
-
-    
-
-
-//   } else if(strcmp(command, pixels_fill) == 0) {
-
-
-//   } else if(strcmp(command, pixels_clear) == 0) {
-
-
-
-//   } else if(strcmp(command, pixels_setBrightness) == 0) {
-
-
-
-//   } else if(strcmp(command, pixels_getBrightness) == 0) {
-
-//   } else if(strcmp(command, pixels_getPin) == 0) {
-
-//   // } else if(strcmp(command, pixels_setPin) == 0) {
-    
-//   // } else if(strcmp(command, pixels_getPixels) == 0) {
-    
-//   } else if(strcmp(command, pixels_size) == 0) {
-//     if (ArgCount != 0) {
-//       printIncorrectNumberOfArgumentsError(0, ArgCount);
-//       return;
-//     }
-//     if (!Pixels) {
-//       invalidPixelInstance();
-//       return;
-//     }
-//     Serial.print("OK: ");
-//     Serial.println(Pixels->numPixels());
-
-
-//   } else {
-//     Serial.print("ERR: invalid command ");
-//     Serial.println(command);
-//     return;
-//   }
-// //   void              begin(void);
-// //   void              show(void);
-// //   void              setPin(uint16_t p);
-// //   void              setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
-// //   void              setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b,
-// //                       uint8_t w);
-// //   void              setPixelColor(uint16_t n, uint32_t c);
-// //   void              fill(uint32_t c=0, uint16_t first=0, uint16_t count=0);
-// //   void              setBrightness(uint8_t);
-// //   void              clear(void);
-// //   void              setPin(uint16_t p);
-// // uint8_t           getBrightness(void) const;
-// // int16_t           getPin(void) const { return pin; };
-// // uint16_t          numPixels(void) const { return numLEDs; }
-// // uint32_t          getPixelColor(uint16_t n) const;
-//   // }
-//   // strtokIndx = strtok(NULL, " ");
-//   // floatFromPC = atof(strtokIndx);     // convert this part to a float
-// }
-
-// //============
-
-// void showParsedData() {
-//     Serial.print("Message ");
-//     Serial.println(command);
-//     Serial.print("Integer ");
-//     Serial.println(integerFromPC);
-//     Serial.print("Float ");
-//     Serial.println(floatFromPC);
-// }
