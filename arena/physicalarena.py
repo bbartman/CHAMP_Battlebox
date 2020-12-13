@@ -251,10 +251,11 @@ class Arena(EventDispatcher):
         self.arduino.write_line("pixels.show")
 
     def led_n_fill(self, red, green, blue, start=0, count=-1):
-        if count < -1:
+        if count <= -1:
             count = self.led_light_count
-        self.arduino.write_line("pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
-            int(red), int(blue), int(green), int(start), int(count) ))
+        cmd = "pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
+            int(red), int(blue), int(green), int(start), int(count) )
+        self.arduino.write_line(cmd)
         self.arduino.write_line("pixels.show")
 
     def led_player_1_lights(self, red, green, blue):

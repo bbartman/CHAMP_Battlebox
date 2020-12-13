@@ -89,9 +89,6 @@
     data:app.data.death_match
     on_pre_enter:
         self.ids.dm_door_drop.do_update_main_button(app.data.death_match.door_drop)
-        app.lights_death_match_config_enter()
-    on_pre_leave:
-        app.lights_death_match_config_leave()
     ScrollView:
         size_hint_y: 1
         do_scroll_x: False
@@ -228,10 +225,6 @@
     name: 'soccer'
     id:sms
     data:app.data.soccer_match
-    on_pre_enter:
-        app.lights_soccer_config_enter()
-    on_pre_leave:
-        app.lights_soccer_config_leave()
     ScrollView:
         size_hint_y: 1
         do_scroll_x: False
@@ -336,8 +329,11 @@
         root.manager.transition.direction = 'left'
     on_pre_enter:
         app.lights_soccer_match()
-        countDownClock.start(rss.smData.duration)
         subScrn.current = 'mainRunSoccerScreen'
+        countDownClock.start(rss.smData.duration)
+        rss.cd_lights = 0
+        rss.prev_light = -1
+        rss.resume_count_down()
         rss.pause_play_button_text = "Pause\nGame"
     StackLayout:
         size_hint: [1, 1]
@@ -356,8 +352,10 @@
                 #    print("Called on timer idle")
                 on_pause:
                     rss.pause_play_button_text = "Resume\nGame"
+                    rss.pause_count_down()
                 on_resume:
                     rss.pause_play_button_text = "Pause\nGame"
+                    rss.resume_count_down()
                 #on_start:
                 #   print("Called on start")
                 #on_cancelled:
@@ -531,8 +529,8 @@
                 #    print("Called on cancelled")
                 #on_seconds:
                 #   print("Tick!")
-                #on_time_expired:
-                #    self.text = "Select a winner!";
+                on_time_expired:
+                    countDownClock.text = "Select a winner!";
         GridLayout:
             size_hint: [1, .8]
             cols:2
@@ -540,7 +538,9 @@
                 text: 'Player 1 Won'
                 font_size: 30
                 on_release:
+                    rdms.cancel_count_downs()
                     countDownClock.cancel()
+                    app.lights_dm_player_1_wins()
                     temp = app.root.get_screen('VictoryScreen')
                     temp.reset_screen(rdms.dmData.get_player_one_name() + " \nhas won!!!", "main")
                     app.root.current = 'VictoryScreen'
@@ -549,7 +549,9 @@
                 text: 'Player 2 Won'
                 font_size: 30
                 on_release:
+                    rdms.cancel_count_downs()
                     countDownClock.cancel()
+                    app.lights_dm_player_2_wins()
                     temp = app.root.get_screen('VictoryScreen')
                     temp.reset_screen(rdms.dmData.get_player_two_name() + " \nhas won!!!", "main")
                     app.root.current = 'VictoryScreen'
@@ -560,6 +562,7 @@
             size_hint: [1, .1]
             on_release:
                 countDownClock.cancel()
+                rdms.cancel_count_downs()
                 app.root.current = 'main'
                 root.manager.transition.direction = 'left'
                 app.data.death_match.reset()

@@ -26,22 +26,26 @@ random.seed(datetime.now())
 
 # Coloring = Red->Green->Blue
 RED = (255, 0, 0)
+MATCH_COUNT_DOWN_RED = (218, 83, 10)
 YELLOW = (255, 255, 0)
+DD_YELLOW = (200, 255, 0)
 GREEN = (0, 255, 0)
 SOCCER_GREEN = (0, 255, 68)
 ORANGE = (255, 68, 0)
 PURPLE = (93, 0, 255)
+WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 PINK = (255, 0, 149)
 DOOR_NOT_CLOSED_WARNING_COLOR = (255, 174, 0)
-BLUE_PLAYER_COLOR = (0, 110, 255)# Make sure that this looks acceptable.
-RED_PLAYER_COLOR = RED
+PLAYER_2_COLOR = (0, 110, 255)
+PLAYER_1_COLOR = RED
 STOP_LIGHT_RED = (184, 29, 19)
 STOP_LIGHT_ORANGE =	(218, 83, 10)
 STOP_LIGHT_YELLOW = (239, 183, 0)
 STOP_LIGHT_GREEN = (0, 255, 0)
 
-BrightnessPerMillis = 1/15
+BrightnessPerMillis = 1/30
+
 class MainScreen(Screen):
     lights_brightness = NumericProperty(0)
 
@@ -51,7 +55,7 @@ class MainScreen(Screen):
         self.on_enter()
 
     def on_enter(self):
-        App.get_running_app().arena.led_brightness_and_fill(10, 255, 255, 255)
+        App.get_running_app().arena.led_brightness_and_fill(10, *WHITE)
         self.lights_brightness = 10
         self.breath_anim = (Animation(lights_brightness=255,
                 s=BrightnessPerMillis, duration=1.0, t="linear") +
@@ -231,12 +235,17 @@ class CountDownTrigger:
     def does_overlap(self, other):
         return self.stop_time > other.stop_time and other.stop_time < self.start_time
 
+class SelectADeathMatchWinnerScreen(Screen):
+    pass
+
 class RunDeathmatchScreen(Screen):
     data = ObjectProperty(None)
     dmData = ObjectProperty(None)
+    
     # cd = count down
-    cd_seconds = NumericProperty(0)
     cd_lights_on = NumericProperty(0)
+
+    match_over_lights = NumericProperty(0)
 
     # Used to trigger the dropping of the doors
     doors_closed = BooleanProperty(False)
@@ -246,10 +255,11 @@ class RunDeathmatchScreen(Screen):
         super(RunDeathmatchScreen, self).__init__(**kwargs)
         self.match_over_trigger = CountDownTrigger(App.get_running_app().arena)
         self.door_drop_trigger = CountDownTrigger(App.get_running_app().arena)
-        self.disable_door_drop_lights = False
         self.will_drop_doors = False
+        self.match_over_active = False
         self.cd_animation = None
-        self.cdColor = (200, 255, 0)
+        self.ddColor = DD_YELLOW
+        self.match_olver_color = MATCH_COUNT_DOWN_RED
 
     def reset_screen(self, app, root):
         self.dd_seconds = 0
@@ -257,7 +267,7 @@ class RunDeathmatchScreen(Screen):
         self.match_over_trigger.reset(0, 30,
             App.get_running_app().get_led_count(),
             self.dmData.duration,
-            (255,0,0),
+            self.match_olver_color,
             self.on_complete_match_count_down)
 
         if self.dmData.door_drop == 'Drop Both':
@@ -266,6 +276,8 @@ class RunDeathmatchScreen(Screen):
             self.will_drop_doors = False
         elif self.dmData.door_drop == 'Doors Always Open':
             self.will_drop_doors = False
+            App.get_running_app().open_player_1_door(1)
+            App.get_running_app().open_player_2_door(1)
         elif self.dmData.door_drop == 'Drop Player 1 Door Only':
             self.will_drop_doors = True
         elif self.dmData.door_drop == 'Drop Player 2 Door Only':
@@ -277,22 +289,17 @@ class RunDeathmatchScreen(Screen):
         if self.will_drop_doors:
             self.door_drop_trigger.reset(self. dmData.door_drop_duration,
                 15, App.get_running_app().get_led_count(), self.dmData.duration,
-                (200,255,0), self.on_completed_door_drop_count_down)
-            
-            if self.match_over_trigger.does_overlap(self.door_drop_trigger):
-                self.disable_door_drop_lights = True
-                Logger.info("door drop overlaps with match completion timer.")
-                return 
-            # self.match_over_trigger.dump("match_over_trigger")
-            # print("===========================================")
-            # self.door_drop_trigger.dump("door_drop_trigger")
-            # print("===========================================")
+                DD_YELLOW, self.on_completed_door_drop_count_down)
+
 
     def on_completed_door_drop_count_down(self):
         print("COmpleted door drop count down")
 
     def on_complete_match_count_down(self):
         print("Complete match count down")
+
+    def cancel_count_downs(self):
+        Animation.cancel_all(self)
 
     def on_seconds(self, instance, value):
         if self.will_drop_doors:
@@ -306,7 +313,19 @@ class RunDeathmatchScreen(Screen):
                     self.cd_animation.bind(on_complete=self.on_dd_complete)
                     self.door_drop_trigger.is_active = True
                     self.cd_animation.start(self)
-                    self.cdColor = self.door_drop_trigger.color
+                    self.ddColor = self.door_drop_trigger.color
+
+        if not self.match_over_trigger.is_active:
+            if value <= self.match_over_trigger.start_time:
+                self.match_over_trigger.is_active = True
+                self.match_over_prev_tick = -1
+                self.match_over_lights = 0
+                self.match_over_animation = Animation(match_over_lights=int(App.get_running_app().get_led_count())-1,
+                                                      duration=self.match_over_trigger.duration(),
+                                                      t="linear")
+                self.match_over_animation.bind(on_complete=self.on_match_complete)
+                self.match_over_animation.start(self)
+
 
     def on_dd_complete(self, animation, value):
         App.get_running_app().do_door_drop()
@@ -314,10 +333,23 @@ class RunDeathmatchScreen(Screen):
     def on_cd_lights_on(self, instance, value):
         if self.prevTick == -1:
             self.prevTick = floor(value)
-            App.get_running_app().arena.set_led(self.prevTick, *self.cdColor)
+            App.get_running_app().arena.set_led(self.prevTick, *self.ddColor)
         elif self.prevTick != floor(value):
             self.prevTick = int(floor(value))
-            App.get_running_app().arena.set_led(self.prevTick, *self.cdColor)
+            App.get_running_app().arena.set_led(self.prevTick, *self.ddColor)
+
+    def on_match_complete(self, animation, value):
+        print("Match over!")
+
+    def on_match_over_lights(self, instance, value):
+        if self.match_over_prev_tick == -1:
+            self.match_over_prev_tick = floor(value)
+            App.get_running_app().arena.set_led(self.match_over_prev_tick,
+                *self.match_over_trigger.color)
+        elif self.match_over_prev_tick != floor(value):
+            self.match_over_prev_tick = int(floor(value))
+            App.get_running_app().arena.set_led(self.match_over_prev_tick,
+                *self.match_over_trigger.color)
 
 
     def on_data(self, instance, value):
@@ -346,9 +378,29 @@ def create_popup(screenName, msg):
 
 class SoccerScreen(Screen):
     data = ObjectProperty(None)
+    lights_brightness = NumericProperty()
+
+
     def __init__(self, **kwargs):
         super(SoccerScreen, self).__init__(**kwargs)
-        
+    
+    def on_enter(self):
+        App.get_running_app().arena.led_brightness_and_fill(10, *SOCCER_GREEN)
+        self.lights_brightness = 10
+        self.breath_anim = (Animation(lights_brightness=255,
+                s=BrightnessPerMillis, duration=1.0, t="linear") +
+            Animation(lights_brightness=10, s=BrightnessPerMillis,
+                duration=1.0, t="linear"))
+        self.breath_anim.repeat = True
+        self.breath_anim.start(self)
+
+    def on_lights_brightness(self, instance, value):
+        App.get_running_app().arena.led_brightness(floor(value))
+
+    def on_pre_leave(self):
+        Animation.cancel_all(self)
+        App.get_running_app().arena.led_brightness(255)
+
     def reset_screen(self, app):
         app.data.soccer_match.reset()
 
@@ -393,11 +445,16 @@ class RunSoccerScreen(Screen):
     PauseGameStr = "Pause\nGame"
     ResumeGameStr = "Resume\nGame"
     pause_play_button_text = StringProperty("Pause\nGame")
-
+    cd_lights = NumericProperty()
     
     def __init__(self, **kwargs): 
         self.register_event_type("on_max_score_reached")
         super(RunSoccerScreen, self).__init__(**kwargs)
+
+    def on_pre_enter(self):
+        App.get_running_app().open_player_1_door(1)
+        App.get_running_app().open_player_2_door(1)
+
 
     def on_data(self, instance, value):
         self.data.bind(team_one_score=self.on_team_one_scored,
@@ -408,12 +465,39 @@ class RunSoccerScreen(Screen):
 
     def play_pause_pressed(self):
         if self.pause_play_button_text == RunSoccerScreen.PauseGameStr:
-            App.get_running_app().lights_game_paused()
             self.ids.countDownClock.pause()
         else:
-            App.get_running_app().lights_soccer()
             self.ids.countDownClock.resume()
             self.pause_play_button_text = RunSoccerScreen.PauseGameStr
+
+    def pause_count_down(self):
+        print("Paused count down")
+        Animation.cancel_all(self)
+
+    def resume_count_down(self):
+        print("Resuemed count down?")
+        duration = self.ids.countDownClock.seconds
+        self.prev_light = -1
+        if duration <= 30:
+            self.cd_anim = (Animation(
+                    cd_lights=int(App.get_running_app().get_led_count())-1,
+                    duration=duration))
+        else:
+            self.cd_anim = (Animation(duration=duration-30) + Animation(
+                    cd_lights=int(App.get_running_app().get_led_count())-1,
+                    duration=30))
+        self.cd_anim.start(self)
+        
+    def on_cd_lights(self, instance, value):
+        if self.prev_light == -1:
+            self.prev_light = floor(value)
+            App.get_running_app().arena.led_n_fill(*MATCH_COUNT_DOWN_RED,
+                0, self.prev_light + 1)
+
+        elif self.prev_light != floor(value):
+            self.prev_light = int(floor(value))
+            App.get_running_app().arena.set_led(self.prev_light,
+                *MATCH_COUNT_DOWN_RED)
 
     def on_max_score_reached(self):
         pass
@@ -679,20 +763,23 @@ class CountDownClockLabel(Label):
         self.register_event_type("on_time_expired")
         self.state = CountDownClockLabel.Timer_idle
         super(CountDownClockLabel, self).__init__(**kwargs)
-
+        self.parallel_animation_cb = None
 
     def finish_callback(self, animation, incr_crude_clock):
-        self.color = [1,1,1,0]
+        self.color = [1, 1, 1, 0]
         incr_crude_clock.text = "FINISHED"
         self.dispatch("on_time_expired")
 
-    def start(self, execTime):
+    def start(self, execTime, ParallelAnimationCB = None):
         Animation.cancel_all(self)  # stop any current animations
         self.color = [1,1,1,1]
         self.seconds = execTime
         self.on_seconds(None, None)
         self.anim = Animation(seconds=0, duration=self.seconds)
         self.anim.bind(on_complete=self.finish_callback)
+        if self.parallel_animation_cb is not None:
+            self.parallel_animation_cb = ParallelAnimationCB
+            self.anim &= ParallelAnimationCB(self, self.seconds)
         self._change_state(CountDownClockLabel.Timer_running)
         self.anim.start(self)
     
@@ -712,6 +799,9 @@ class CountDownClockLabel(Label):
         self.on_seconds(None, None)
         self.anim = Animation(seconds=0, duration=self.seconds)
         self.anim.bind(on_complete=self.finish_callback)
+        if self.parallel_animation_cb is not None:
+            self.parallel_animation_cb = ParallelAnimationCB
+            self.anim &= ParallelAnimationCB(self, self.seconds)
         self._change_state(CountDownClockLabel.Timer_running)
         self.anim.start(self)
     
@@ -983,11 +1073,11 @@ class MainApp(App):
 
     #
     def lights_player_1_ready(self):
-        self.arena.led_player_1_lights(*RED_PLAYER_COLOR)
+        self.arena.led_player_1_lights(*PLAYER_1_COLOR)
 
     #
     def lights_player_2_ready(self):
-        self.arena.led_player_2_lights(*BLUE_PLAYER_COLOR)
+        self.arena.led_player_2_lights(*PLAYER_2_COLOR)
 
     #
     def lights_player_1_door_closed(self):
@@ -1023,47 +1113,24 @@ class MainApp(App):
 
     #
     def lights_soccer_team_1_wins(self):
-        pass
+        self.arena.led_brightness_and_fill(255, *PLAYER_1_COLOR)
 
     #
     def lights_soccer_team_2_wins(self):
-        pass
+        self.arena.led_brightness_and_fill(255, *PLAYER_2_COLOR)
+
+    #
+    def lights_dm_player_1_wins(self):
+        self.arena.led_brightness_and_fill(255, *PLAYER_1_COLOR)
+
+    #
+    def lights_dm_player_2_wins(self):
+        self.arena.led_brightness_and_fill(255, *PLAYER_2_COLOR)
 
     #
     def lights_soccer_match_tie(self):
-        pass
+        self.arena.led_brightness_and_fill(255, *ORANGE)
     
-    #
-    def lights_death_match_config_enter(self):
-        pass
-    
-    #
-    def lights_death_match_config_leave(self):
-        pass
-
-    #
-    def lights_soccer_config_enter(self):
-        pass
-
-    #
-    def lights_soccer_config_leave(self):
-        pass
-
-    #Make this green
-    def lights_count_down_screen_go(self):
-        pass
-
-    # make this yellow
-    def lights_count_down_screen_1(self):
-        pass
-
-    # make this orange
-    def lights_count_down_screen_2(self):
-        pass
-
-    # make this red
-    def lights_count_down_screen_3(self):
-        pass
 
     #
     def lights_death_match(self):
@@ -1072,10 +1139,6 @@ class MainApp(App):
     #
     def lights_soccer_match(self):
         pass   
-
-    #
-    def lights_game_paused(self):
-        pass
 
     #
     def get_led_count(self):

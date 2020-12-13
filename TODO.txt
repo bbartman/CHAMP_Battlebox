@@ -47,4 +47,7 @@ Arena TODOS:
 		Set it and forget it. for the door drop and other related actions.
 
 *** Create a synchronous send receive for arduino communication that's handled outside of the event loop.
-		- Or possibly inside of the event loop, but non-blocking?
+		- Or possibly inside of the event loop, but non-blocking?\
+
+
+Make sure to add animation cancellation to run deathmatch/soccer screens.
