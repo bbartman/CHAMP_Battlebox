@@ -9,38 +9,8 @@ from arena import NormallyClosed, NormallyOpen
 from BattleBox.arena import Player
 from kivy.event import EventDispatcher
 from kivy.logger import Logger
-from serial.threaded import LineReader, ReaderThread
 from arena.arduinocommunicator import ArduinoCommunicator
 
-# class ArduinoReceiver(LineReader):
-#     def __init__(self, arena, **kwargs):
-#         super(ArduinoReceiver, self).__init__(**kwargs)
-#         self.arena = arena
-#         self.received_ready_command = False
-
-#     def connection_made(self, transport):
-#         super(ArduinoReceiver, self).connection_made(transport)
-#         Logger.info("Connected to arduino")
-
-#     def handle_line(self, data):
-#         if not self.received_ready_command:
-#             # print(data)
-#             if data == "ready":
-#                 self.arena.mutex.acquire()
-#                 self.arena.arduino_ready = True
-#                 self.arena.mutex.release()
-#                 Logger.info("Received ready command from arduino")
-#                 self.received_ready_command = True
-#             else:
-#                 Logger.info("unknown response from arduino", data)
-#         if ((data.startswith("OK") and not data.startswith("OK:") )or(data.startswith("DEBUG:"))):
-#             return
-#         Logger.info("line received {0}\n".format(repr(data).strip()))
-
-#     def connection_lost(self, exc):
-#         if exc:
-#             traceback.print_exc(exc)
-#         Logger.info("disconnected from arduino.")
 
 def parseLEDRanges(ledRanges):
     items = set()

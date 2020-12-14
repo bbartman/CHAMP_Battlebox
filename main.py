@@ -21,6 +21,8 @@ from kivy.logger import Logger
 from math import floor
 import platform, re, random
 from datetime import datetime
+import subprocess as subp
+import pickle
 
 random.seed(datetime.now())
 
@@ -1041,23 +1043,38 @@ if platform.system() != 'Windows':
     from arena.physicalarena import Arena
     HWProp = Arena
 
+# def exit_media_app(app):
+#     app.stop()
+
 class MainApp(App):
     data = BBViewModelProp()
     arena = HWProp()
 
-    def parse_int_or_zero(self, stringValue):
+    def parse_int_or_zero(self, str_val):
         try:
-            return int(stringValue)
+            return int(str_val)
         except:
             return 0
 
     def __init__(self, **kwargs): 
+        # self.media_q = mp.Queue()
+        # self.logging_q = mp.Queue()
+        # self.media_p = mp.Process(target=run_media_subprocess, args=(self.media_q, self.logging_q))
+        # self.media_p.start()
+        self.media_process = subp.Popen("python3 app.py", cwd="mediadisplay/", shell=True)
+        
         self.whiteLight = (255, 255, 255)
         super(MainApp, self).__init__(**kwargs)
         self.arena.init()
 
     def on_stop(self):
         self.arena.shutdown_connection()
+        self.media_process.kill()
+        # self.send_media_function(exit_media_app)
+        # self.media_p.join()
+
+    def send_media_function(self, func):
+        self.media_q.put_nowait(pickle.dumps(func))
 
     def build(self):
         root_widget = ScreenManagement()
@@ -1130,7 +1147,6 @@ class MainApp(App):
     #
     def lights_soccer_match_tie(self):
         self.arena.led_brightness_and_fill(255, *ORANGE)
-    
 
     #
     def lights_death_match(self):
