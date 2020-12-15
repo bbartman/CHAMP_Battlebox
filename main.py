@@ -571,7 +571,10 @@ class WaitForPlayers(Screen):
 
     def checkForReadyState(self):
         if (self.player_1_ready and self.player_2_ready):
-            self.dispatch("on_everyone_ready")
+            Clock.schedule_once(self.TriggerLateScreenChange, 0.5)
+
+    def TriggerLateScreenChange(self, Key, *largs):
+        self.dispatch("on_everyone_ready")
 
     def on_pre_enter(self):
         self.player_1_ready = App.get_running_app().arena.player_1.ready_button
@@ -680,7 +683,7 @@ class WaitForPlayersAndDoors(Screen):
     def checkForReadyState(self):
         if (self.player_1_ready and self.player_2_ready
                 and self.player_2_door_closed and self.player_2_door_closed):
-            Clock.schedule_once(self.TriggerLateScreenChange, 0.5 )
+            Clock.schedule_once(self.TriggerLateScreenChange, 0.5)
             
 
     def on_next_screen_after_ready(self, instance, value):
@@ -1057,10 +1060,6 @@ class MainApp(App):
             return 0
 
     def __init__(self, **kwargs): 
-        # self.media_q = mp.Queue()
-        # self.logging_q = mp.Queue()
-        # self.media_p = mp.Process(target=run_media_subprocess, args=(self.media_q, self.logging_q))
-        # self.media_p.start()
         self.media_process = subp.Popen("python3 app.py", cwd="mediadisplay/", shell=True)
         
         self.whiteLight = (255, 255, 255)
@@ -1070,8 +1069,6 @@ class MainApp(App):
     def on_stop(self):
         self.arena.shutdown_connection()
         self.media_process.kill()
-        # self.send_media_function(exit_media_app)
-        # self.media_p.join()
 
     def send_media_function(self, func):
         self.media_q.put_nowait(pickle.dumps(func))

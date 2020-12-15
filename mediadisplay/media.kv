@@ -1,0 +1,40 @@
+#
+
+<MediaScreenManager>
+    Screen:
+        Button:
+            on_press: root.current = "video"
+            on_press: self.enabled= False
+    VideoScreen:
+
+<VideoScreen>
+    slider: slider
+    name: "video"
+    on_enter: self.clearbckgrnd()
+    on_enter: self.play()
+    on_pre_leave: self.addbckgrnd()
+    BoxLayout:
+        orientation: 'vertical'
+        Button:
+            size_hint_y: 420
+            #text: "play"
+            on_press: print('button to minimize pressed')
+            on_press: root.change_size()
+            background_color: (0,0,0,1)
+            Image:
+                # source: './Infinity.gif'
+                height: self.parent.height / 1.5 
+                y: self.parent.y + self.parent.height /2 - self.height / 2
+                x: self.parent.x + self.parent.width / 2 - self.width / 2
+                allow_stretch: False
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 60
+            Slider:
+                id: slider
+                on_value: root.set_videopos(self.value_normalized)
+                #value_normalized: root.set_slider
+            BoxLayout:
+                Button:
+                    text: 'Play/Pause'
+                    on_press: root.playpause()
