@@ -49,7 +49,8 @@ class VideoScreen(Screen):
 
     def play(self):
         global player
-        player = self.player = OMXPlayer("media/rotating-logo.mkv", args=["--display", "7","--layer", "10000", "--loop"])
+        # "--layer", "10000",
+        player = self.player = OMXPlayer("media/rotating-logo.mkv", args=["--display", "7", "--loop"])
         self.player.set_video_pos(0,100,1280,800)
         #self.player.hide_video()
         #self.player.show_video()
