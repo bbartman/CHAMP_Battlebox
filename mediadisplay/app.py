@@ -31,61 +31,60 @@ import pickle
 
 class MediaScreenManager(ScreenManager):
     pass
-player = None 
-class VideoScreen(Screen):
-    slider = ObjectProperty()
-    minimized = BooleanProperty(False)
-    def __init__(self, **kwargs):
-        super(VideoScreen, self).__init__(**kwargs)
-        # self.play()
+# player = None 
+# class VideoScreen(Screen):
+#     slider = ObjectProperty()
+#     minimized = BooleanProperty(False)
+#     def __init__(self, **kwargs):
+#         super(VideoScreen, self).__init__(**kwargs)
+#         # self.play()
 
-    @staticmethod
-    def clearbckgrnd():
-        Window.clearcolor = (0,0,0,0)
+#     @staticmethod
+#     def clearbckgrnd():
+#         Window.clearcolor = (0,0,0,0)
 
-    @staticmethod
-    def addbckgrnd():
-        Window.clearcolor = (0,0,0,1)
+#     @staticmethod
+#     def addbckgrnd():
+#         Window.clearcolor = (0,0,0,1)
 
-    def play(self):
-        global player
-        # "--layer", "10000",
-        player = self.player = OMXPlayer("media/rotating-logo.mkv", args=["--display", "7", "--loop"])
-        self.player.set_video_pos(0,100,1280,800)
-        #self.player.hide_video()
-        #self.player.show_video()
-        self.set_slider()
-        Clock.schedule_once(self.quit, 20)
-        Clock.schedule_interval(self.set_slider, 3)
-
-
-    def playpause(self):
-        self.player.play_pause()
-
-    def quit(self, gg, **kwargs):
-        self.player.quit()
-        App.get_running_app().stop()
+#     def play(self):
+#         global player
+#         player = self.player = OMXPlayer("media/rotating-logo.mkv", args=["--display", "7","--layer", "10000", "--loop"])
+#         self.player.set_video_pos(0,100,1280,800)
+#         #self.player.hide_video()
+#         #self.player.show_video()
+#         self.set_slider()
+#         Clock.schedule_once(self.quit, 20)
+#         Clock.schedule_interval(self.set_slider, 3)
 
 
-    def set_slider(self, *args):
-        pos = self.player.position() # in seconds as int
-        duration =  self.player.duration() # in seconds as float
-        #return pos/duration
-        self.slider.value_normalized = pos/duration
-        #return 0.5
+#     def playpause(self):
+#         self.player.play_pause()
 
-    def set_videopos(self, *args):
-        pos = self.player.position() # in seconds as int
-        duration =  self.player.duration() # in seconds as float
-        if abs (pos/duration - self.slider.value_normalized) > 0.05:
-            self.player.set_position(self.slider.value_normalized*duration)
+#     def quit(self, gg, **kwargs):
+#         self.player.quit()
+#         App.get_running_app().stop()
 
 
-    def change_size(self):
-        #width 800
-        #height 480
-        if not self.minimized:
-            self.player.set_video_pos(2,2,798,418)
+#     def set_slider(self, *args):
+#         pos = self.player.position() # in seconds as int
+#         duration =  self.player.duration() # in seconds as float
+#         #return pos/duration
+#         self.slider.value_normalized = pos/duration
+#         #return 0.5
+
+#     def set_videopos(self, *args):
+#         pos = self.player.position() # in seconds as int
+#         duration =  self.player.duration() # in seconds as float
+#         if abs (pos/duration - self.slider.value_normalized) > 0.05:
+#             self.player.set_position(self.slider.value_normalized*duration)
+
+
+#     def change_size(self):
+#         #width 800
+#         #height 480
+#         if not self.minimized:
+#             self.player.set_video_pos(2,2,798,418)
 
 
 class MediaApp(App):
@@ -120,5 +119,5 @@ if __name__ == '__main__':
         app.run()
     finally:
         pass
-        player.stop()
+        # player.stop()
         # os.system('killall dbus-daemon')

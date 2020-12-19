@@ -1,53 +1,66 @@
 Documentation Links
-	a. Neopixel lights library https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel
-	b. gpio zero - documentation https://gpiozero.readthedocs.io/en/stable/
-		- Library https://github.com/gpiozero/gpiozero
-
-2. Environment stuff
-	- Figure out how to launch kivy in full screen.
-	- Figure out how to run 2 kivy apps at the same time in full screen on two different
-		screens at the same time.
-
+	A. RPi.GPIO
 
 Arena TODOS:
-1. Lights:
-	2. Lights for idle.
-		A. Turning off lights for idle.
-	3. Lights for waiting for players.
-		- Door closed screen
-		- Non-door closed screen
-	5. Lights for player 1 & 2 ready.
-		- I need to verify this when using more lights then 1.
-	6. Lights for door drop.
-		- I need to verify this when the match timer and the door drop timer overlap.
-	8. Lights for team
-		A. Team 1 Goal
-		B. Team 2 Goal
-	9. Lights for game paused.
-	10. Lights for Player 1/2 wins deathmatch
-	11. Lights for team 1/2 wins soccer
-	12. Lights for soccer match tie
-	13. Lights for game countdown.
-		- Partially implemented.
-		- All this needs is a variable.
+Soccer Screen:
+	1. Lights for game paused.
+		- Switch to breathing yellow lights or blinking yellow lights?
 
-	14. Ligths for game selection.
-	15. Lights for configuring death match.
-	16. Lights for configuring soccer.
-	17. Lights for waiting for players to close doors.
-	18. Lights for waiting for players to press ready.
-	19. Lights for doors not closed when player presses ready.
-	20. Doors - lights Make sure to change lights when if the door needs to be closed before
+WaitingForPlayerAndDoors Screen:
+	1. Lights for waiting for players to close doors.
+		- Create a special fill pattern based off of the pattern that is given through
+			the configuration file. This will allow for faster communication.
+
+	2. Lights for waiting for players to press ready.
+
+	3. Lights for doors not closed when player presses ready.
+
+	4. Doors - lights Make sure to change lights when if the door needs to be closed before
 		   the match can begin and they are not closed.
 
+	5. Fix the text for when a player closes a door.
+		- This needs to say door closed and have the text color changed to black instead of white.
+General:
+	Make sure that names entered are transfered to the victory screens correctly.
+		- Just need to verify this, it should already be working (I think).
 
-21 . Rewrite all light related actions acdnd match timers interms of animations
-		this will make it easier to cancel some actions. Speicifically the open/close door actions.
-		- Consider handling this animation for death match also, this would be so we can
-		Set it and forget it. for the door drop and other related actions.
+Media Requirements inside of Main apps:
+	1. A configuration for using unix domain sockets for communicating between main and media
+		apps.
+	2. Figure out how to handle communication messages.
+	3. May need to switch to AsyncIO event loop for both apps.
 
-*** Create a synchronous send receive for arduino communication that's handled outside of the event loop.
-		- Or possibly inside of the event loop, but non-blocking?\
+Options/nice to haves:
+	1. (Optional) Create a special button on main screen to allow people to open/close the doors?
+	2. (Optional) Lights for idle.
+		A. Turning off lights for idle.
 
 
-Make sure to add animation cancellation to run deathmatch/soccer screens.
+Media Screens:
+	Idle screen:
+		Spinning coin image.
+
+	Configuring deathmatch screen:
+		- Something goes woosh onto the screen that says deathmatch?
+		- Silver Death match letters with wires and things on them.
+			- Maybe add plastic bits, and scuff marks.
+		Sound - "Deathmatch"
+
+	Configure Soccer Screen:
+		- Image with soccer ball and broken circuits?
+		Sound - "Blood sports ball"
+
+  Waiting for players and doors screen:
+		- Have something indicating that doors need to close.
+		- Have something indicating door status.
+
+
+	Count down screen:
+		- Need to do coordinated display etc... This MIGHt be best handled
+			by the fact that communication is fast on domain sockets.
+
+	Victory Screen:
+		Need to display winner name and possibly some confetti or something?
+	
+	Deathmatch - Match over and no winner selected yet:
+		- Something that would work for both soccer and death match?

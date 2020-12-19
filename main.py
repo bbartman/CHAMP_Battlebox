@@ -473,11 +473,9 @@ class RunSoccerScreen(Screen):
             self.pause_play_button_text = RunSoccerScreen.PauseGameStr
 
     def pause_count_down(self):
-        print("Paused count down")
         Animation.cancel_all(self)
 
     def resume_count_down(self):
-        print("Resuemed count down?")
         duration = self.ids.countDownClock.seconds
         self.prev_light = -1
         if duration <= 30:
