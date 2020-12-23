@@ -1,53 +1,131 @@
-#
+
 
 <MediaScreenManager>
-    # Screen:
-    #     Renderer:
-    Screen:
-        # Button:
-        #     on_press: root.current = "video"
-        #     on_press: self.enabled= False
-        Button:
-            text: ""
-            on_press: gif.anim_delay = 0.10
-            on_press: gif._coreimage.anim_reset(True)
+    LoadingScreen:
+    MainScreen:
+    DeathmatchScreen:
+    SoccerScreen:
+    RunSoccerScreen:
+    RunDeathmatchScreen:
+    MatchOver:
+    WaitForPlayers:
+    WaitForPlayersAndDoors:
+    VictoryScreen:
+    CountDownScreen:
+
+<LoadingScreen@Screen>
+    name:"LoadingScreen"
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Loading..."
+            font_size: 80
+
+<MainScreen@Screen>
+    name: "main"
+    GridLayout:
+        cols:1
         Image:
             id: gif
-            source: 'media/SpinningCoin.gif'
+            source: 'media/SpinningCoin_50.gif'
             # center: self.parent.center
-            allow_stretch: False
+            allow_stretch: True
             anim_delay: 0
-            anim_loop: 1
-    # VideoScreen:
+            anim_loop: 0
 
-# <VideoScreen>
-#     slider: slider
-#     name: "video"
-#     on_enter: self.clearbckgrnd()
-#     on_enter: self.play()
-#     on_pre_leave: self.addbckgrnd()
-#     BoxLayout:
-#         orientation: 'vertical'
-#         Button:
-#             size_hint_y: 420
-#             #text: "play"
-#             on_press: print('button to minimize pressed')
-#             on_press: root.change_size()
-#             background_color: (0,0,0,1)
-#             Image:
-#                 # source: './Infinity.gif'
-#                 height: self.parent.height / 1.5 
-#                 y: self.parent.y + self.parent.height /2 - self.height / 2
-#                 x: self.parent.x + self.parent.width / 2 - self.width / 2
-#                 allow_stretch: False
-#         BoxLayout:
-#             orientation: 'vertical'
-#             size_hint_y: 60
-#             Slider:
-#                 id: slider
-#                 on_value: root.set_videopos(self.value_normalized)
-#                 #value_normalized: root.set_slider
-#             BoxLayout:
-#                 Button:
-#                     text: 'Play/Pause'
-#                     on_press: root.playpause()
+<DeathmatchScreen@Screen>:
+    name: 'Deathmatch'
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Deathmatch"
+            font_size: 80
+
+<RunDeathmatchScreen@Screen>
+    name: 'RunDeathmatch'
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Run Deathmatch"
+            font_size: 80
+
+<SoccerScreen@Screen>:
+    name: 'Soccer'
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Soccer"
+            font_size: 80
+
+<RunSoccerScreen@Screen>
+    name: "RunSoccer"
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Run Soccer"
+            font_size: 80
+
+<MatchOver@Screen>
+    name: 'MatchOver'
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Pick a winner!"
+            font_size: 80
+
+<WaitForPlayers@Screen>
+    name: 'WaitForPlayers'
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Wait for players"
+            font_size: 80
+
+<WaitForPlayersAndDoors@Screen>
+    name: 'WaitForPlayersAndDoors'
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Wait for players and doors"
+            font_size: 80
+
+<VictoryScreen>
+    name: 'VictoryScreen'
+    id: victoryScreen
+    on_enter:
+        pymunk.init()
+        pymunk.reset()
+        pymunk.pos = 0, 0
+    on_leave:
+        pymunk.stop()
+    FloatLayout:
+        PymunkDemo:
+            # canvas:
+            #     Color:
+            #         rgba: 52/255.0, 235/255.0, 73/255.0, 1
+            #     Rectangle:
+            #         pos: self.pos
+            #         size: self.size
+            id: pymunk
+            size_hint: [1, 1]
+        Image:
+            source:"media/LHSHorn.png"
+            pos: -600, -350
+        Image:
+            source:"media/RHSHorn.png"
+            pos: 600, -350
+
+        GridLayout:
+            cols: 1
+            Label:
+                text:"Some one won? Something Victory"
+                id: victoryText
+                font_size: 80
+
+<CountDownScreen@Screen>
+    name: "CountDownScreen"
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Count down"
+            font_size: 80

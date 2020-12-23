@@ -3,6 +3,9 @@
 #:import Factory kivy.factory.Factory
 
 <ScreenManagement>:
+    on_current:
+        app.send_screen_cmd(args[1])
+    LoadingScreen:
     MainScreen:
     DeathmatchScreen:
     RunDeathmatchScreen:
@@ -14,6 +17,14 @@
     VictoryScreen:
     ManualSoccerScoreAdjustmentScreen:
     CountDownScreen:
+
+<LoadingScreen@Screen>
+    name:"LoadingScreen"
+    GridLayout:
+        cols: 1
+        Label:
+            text:"Loading..."
+            font_size: 80
 
 <MainScreen>:
     name: 'main'
@@ -30,7 +41,7 @@
                 font_size: 24
                 on_release:
                     app.data.death_match.reset()
-                    app.root.current = 'deathmatch'
+                    app.root.current = 'Deathmatch'
                     root.manager.transition.direction = 'left'
 
             Button:
@@ -38,7 +49,7 @@
                 font_size: 24
                 on_release:
                     app.data.soccer_match.reset()
-                    app.root.current = 'soccer'
+                    app.root.current = 'Soccer'
                     root.manager.transition.direction = 'left'
 
 <CustomDropDown>:
@@ -84,7 +95,7 @@
 
 
 <DeathmatchScreen>:
-    name: 'deathmatch'
+    name: 'Deathmatch'
     id: dms
     data:app.data.death_match
     on_pre_enter:
@@ -222,7 +233,7 @@
             on_release: root.dismiss()
 
 <SoccerScreen>:
-    name: 'soccer'
+    name: 'Soccer'
     id:sms
     data:app.data.soccer_match
     ScrollView:
@@ -325,6 +336,7 @@
     on_max_score_reached:
         temp = app.root.get_screen('VictoryScreen')
         temp.reset_screen(rss.get_winning_team_name() + " \nhas won!!!", "main")
+        app.send_victory_screen_cmd(rss.get_winning_team_name())
         app.root.current = 'VictoryScreen'
         root.manager.transition.direction = 'left'
     on_pre_enter:
@@ -363,6 +375,7 @@
                 on_time_expired:
                     temp = app.root.get_screen('VictoryScreen')
                     temp.reset_screen(rss.get_winning_team_name() + " \nhas won!!!", "main")
+                    app.send_victory_screen_cmd(rss.get_winning_team_name())
                     app.root.current = 'VictoryScreen'
                     root.manager.transition.direction = 'left'
             Label:
@@ -405,6 +418,7 @@
                             app.lights_soccer_team_1_wins()
                             temp = app.root.get_screen('VictoryScreen')
                             temp.reset_screen(rss.smData.get_team_one_name() + " \nhas won!!!", "main")
+                            app.send_victory_screen_cmd(rss.smData.get_team_one_name())
                             app.root.current = 'VictoryScreen'
                             root.manager.transition.direction = 'left'
 
@@ -431,6 +445,7 @@
                             app.lights_soccer_team_2_wins()
                             temp = app.root.get_screen('VictoryScreen')
                             temp.reset_screen(rss.smData.get_team_two_name() + " \nhas won!!!", "main")
+                            app.send_victory_screen_cmd(rss.smData.get_team_two_name())
                             app.root.current = 'VictoryScreen'
                             root.manager.transition.direction = 'left'
 
@@ -543,6 +558,7 @@
                     app.lights_dm_player_1_wins()
                     temp = app.root.get_screen('VictoryScreen')
                     temp.reset_screen(rdms.dmData.get_player_one_name() + " \nhas won!!!", "main")
+                    app.send_victory_screen_cmd(rdms.dmData.get_player_one_name())
                     app.root.current = 'VictoryScreen'
                     root.manager.transition.direction = 'left'
             Button:
@@ -554,6 +570,7 @@
                     app.lights_dm_player_2_wins()
                     temp = app.root.get_screen('VictoryScreen')
                     temp.reset_screen(rdms.dmData.get_player_two_name() + " \nhas won!!!", "main")
+                    app.send_victory_screen_cmd(rdms.dmData.get_player_two_name())
                     app.root.current = 'VictoryScreen'
                     root.manager.transition.direction = 'left'
 
@@ -587,6 +604,7 @@
                 on_release:
                     temp = app.root.get_screen('VictoryScreen')
                     temp.reset_screen(dmds.dmData.get_player_one_name() + " \nhas won!!!", "main")
+                    app.send_victory_screen_cmd(dmds.dmData.get_player_one_name())
                     app.root.current = 'VictoryScreen'
                     root.manager.transition.direction = 'left'
 
@@ -596,6 +614,7 @@
                 on_release:
                     temp = app.root.get_screen('VictoryScreen')
                     temp.reset_screen(dmds.dmData.get_player_two_name() + " \nhas won!!!", "main")
+                    app.send_victory_screen_cmd(dmds.dmData.get_player_two_name())
                     app.root.current = 'VictoryScreen'
                     root.manager.transition.direction = 'left'
 

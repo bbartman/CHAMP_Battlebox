@@ -1,5 +1,4 @@
 from kivy.config import Config
-# Config.set('kivy', 'keyboard_mode', 'systemanddock')
 Config.read("BattleBox.ini")
 from kivy.app import App
 from kivy.animation import Animation
@@ -21,8 +20,13 @@ from kivy.logger import Logger
 from math import floor
 import platform, re, random
 from datetime import datetime
+import time
 import subprocess as subp
-import pickle
+import asyncio
+from ipc.communicator import InstructionServer
+from ipc.message import ScreenChange, DeclareWinner
+import json
+
 
 random.seed(datetime.now())
 
@@ -54,7 +58,6 @@ class MainScreen(Screen):
     def __init__(self, **kwargs): 
         super(MainScreen, self).__init__(**kwargs)
         self.Breath = None
-        self.on_enter()
 
     def on_enter(self):
         App.get_running_app().arena.led_brightness_and_fill(10, *WHITE)
@@ -934,8 +937,6 @@ class VictoryScreen(Screen):
     def on_enter(self):
         pass
 
-
-
 class FadeTicker(Label):
     seconds = NumericProperty(3)
     final_word = StringProperty("FIGHT!!!")
@@ -1050,6 +1051,7 @@ if platform.system() != 'Windows':
 class MainApp(App):
     data = BBViewModelProp()
     arena = HWProp()
+    media_app_ready = BooleanProperty(False)
 
     def parse_int_or_zero(self, str_val):
         try:
@@ -1057,19 +1059,47 @@ class MainApp(App):
         except:
             return 0
 
-    def __init__(self, **kwargs): 
+    def on_media_app_ready(self, inst, value):
+        self.root.current = 'main'
+        self.root.transition.direction = 'down'
+
+    def on_received_connection(self, line):
+        Logger.info("We received ready connection")
+        self.media_app_ready = True
+
+    def on_start(self):
+        Logger.info("Reached on_start")
+        self.server = InstructionServer(self.addr, self.on_received_connection)
+        self.task = asyncio.create_task(self.server.run_server())
         self.media_process = subp.Popen("python3 app.py", cwd="mediadisplay/", shell=True)
+
+
+    def __init__(self, **kwargs): 
+        self.addr = Config.get("media", "socket", fallback="/home/pi/.battle_box_helpers/media_socket")
         
         self.whiteLight = (255, 255, 255)
         super(MainApp, self).__init__(**kwargs)
         self.arena.init()
 
     def on_stop(self):
+        tasks = [t for t in asyncio.all_tasks() if t is not
+                asyncio.current_task()]
+
+        [task.cancel() for task in tasks]
+
+        Logger.info(f"Main: Cancelling {len(tasks)} outstanding tasks")
         self.arena.shutdown_connection()
         self.media_process.kill()
 
-    def send_media_function(self, func):
-        self.media_q.put_nowait(pickle.dumps(func))
+    def send_screen_cmd(self, screen):
+        Logger.info(f"MainApp: calling send_screen_cmd with {screen}")
+        msg = ScreenChange(screen)
+        asyncio.create_task(self.server.send_to_all(msg.to_json()))
+
+    def send_victory_screen_cmd(self, Name):
+        Logger.info(f"MainApp: calling send_victory_screen_cmd with text {Name}")
+        msg = DeclareWinner(Name)
+        asyncio.create_task(self.server.send_to_all(msg.to_json()))
 
     def build(self):
         root_widget = ScreenManagement()
@@ -1206,4 +1236,6 @@ class MainApp(App):
 
 
 if __name__ == '__main__':
-    MainApp().run()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(MainApp().async_run())
+    loop.close()
