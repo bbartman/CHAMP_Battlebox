@@ -3,7 +3,7 @@ from kivy.config import Config
 Config.read("Media.ini")
 import random
 
-random.seed(5)
+random.seed(int(time.time()*1000))
 
 import cffi, kivy, math, traceback
 from kivy.app import App
@@ -29,7 +29,7 @@ from kivy.logger import Logger
 import pymunk
 import pymunk.autogeometry
 from pymunk.vec2d import Vec2d
-
+from functools import partial
 
 
 # This makes sure we get the interprocess communication stuff
@@ -240,8 +240,149 @@ class VictoryScreen(Screen):
     def reset_screen(self, VictoryText):
         self.ids.victoryText .text = VictoryText
 
-class MatchScreen(Screen):
-    pass
+# class MatchScreen(Screen):
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
+ 
+
+class RunDeathmatchScreen(Screen):
+    dd_prog_value = NumericProperty(0)
+    seconds = NumericProperty(0)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.animation = None
+    def on_leave(self):
+        if self.animation is not None:
+            Animation.cancel_all(self)
+            self.animation = None
+    def switch_dd_screen(self, name, *args):
+        self.ids.ddDisplay.current = name
+        self.ids.ddDisplay.transition.direction = "left"
+
+    def run_animation(self, duration, will_dd, dd_startTime, dd_endTime, timeDelta):
+        self.seconds = duration
+        self.animation = Animation(seconds=0, duration=duration)
+        if will_dd:
+            assert dd_startTime > dd_endTime, "This ends before it starts"
+            Logger.info("MediaApp->MatchScreen->runAnimation: animating dd")
+            self.dd_prog_value = 0
+            # Late message start colaboration.
+            if duration < dd_startTime:
+                raise Exception("Possible issue with late starting deathmatch timer.")
+            delayedStart = Animation(duration=duration - dd_startTime) 
+            ddAnimation = Animation(dd_prog_value=self.ids.pb.max, duration=dd_startTime - dd_endTime)
+            ddAnimation.bind(on_start=partial(self.switch_dd_screen, "dd"),
+                             on_complete=partial(self.switch_dd_screen, "postdd"))
+            combinedAnimations = delayedStart + ddAnimation
+            self.animation &= combinedAnimations
+        self.animation.start(self)
+        return False
+
+    def configure_screen(self, startTime, duration, will_dd, dd_startTime, dd_endTime):
+        clockStartTimeInMs = startTime - int(round(time.time() * 1000))
+        if clockStartTimeInMs <= 0:
+            Logger.info("MediaApp->RunDeathmatchScreen: Starting timer late or now")
+            reducedTime = duration + (clockStartTimeInMs/1000.0)
+            self.run_animation(reducedTime, will_dd, dd_startTime, dd_endTime, 0)
+        else:
+            Logger.info(f"MediaApp->RunDeathmatchScreen: Setting timer for later {clockStartTimeInMs/1000.0}")
+            Clock.schedule_once(
+                partial(self.run_animation, duration, will_dd, dd_startTime, dd_endTime),
+                clockStartTimeInMs/1000.0)
+
+    def on_seconds(self, instance, value):
+        self.ids.time.text = str(round(self.seconds, 1))
+
+class RunSoccerScreen(Screen):
+    red_team_name = StringProperty("Red team")
+    red_score = NumericProperty(0)
+    blue_team_name = StringProperty("Blue team")
+    blue_score = NumericProperty(0)
+    seconds = NumericProperty(0)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.animation = None
+        self.red_team_goal_anim = None
+        self.blue_team_goal_anim = None
+
+    def on_leave(self):
+        Animation.cancel_all(self)
+        self.animation = None
+    def on_enter(self):
+        self.seconds = 0
+
+    def on_seconds(self, instance, value):
+        self.ids.time.text = str(round(self.seconds, 1))
+
+    def run_animation(self, duration, deltaTime):
+        self.seconds = duration
+        self.animation = Animation(seconds=0, duration=duration)
+        self.animation.start(self)
+        return False
+    
+    # This does a complete screen reset.
+    def configure_screen(self, startTime, duration, redTeamName, blueTeamName):
+        self.switch_subscreens("scoreDisplay")
+        self.red_score = 0
+        self.blue_score = 0
+        self.red_team_name = redTeamName
+        self.blue_team_name = blueTeamName
+        clockStartTimeInMs = startTime - int(round(time.time() * 1000))
+        if clockStartTimeInMs <= 0:
+            Logger.info("MediaApp->RunSoccerScreen: Starting timer late or now")
+            reducedTime = duration + (clockStartTimeInMs/1000.0)
+            self.run_animation(reducedTime, 0)
+        else:
+            Logger.info(f"MediaApp->RunSoccerScreen: Setting timer for later {clockStartTimeInMs/1000.0}")
+            Clock.schedule_once(partial(self.run_animation, duration),
+                clockStartTimeInMs/1000.0)
+    
+    # This is for the manual score change screen update.
+    # Should not display goals screen.
+    def update_score(self, redTeamGoals, blueTeamGoals):
+        self.red_score = redTeamGoals
+        self.blue_score = blueTeamGoals
+
+    def switch_subscreens(self, screenName, *AniArgs):
+        self.ids.sm.current = screenName
+        self.ids.sm.transition.direction = "left"
+
+    def red_scored(self, goalCount, timePaused):
+        Animation.cancel_all(self)
+        self.seconds = timePaused
+        self.red_score = goalCount
+        self.red_team_goal_anim = Animation(duration=10)
+        self.red_team_goal_anim.bind(on_start=partial(self.switch_subscreens, "redGoal"),
+                                     on_complete=partial(self.switch_subscreens, "scoreDisplay"))
+        self.red_team_goal_anim.start(self)
+
+    def blue_scored(self, goalCount, timePaused):
+        Animation.cancel_all(self)
+        self.seconds = timePaused
+        self.blue_score = goalCount
+        self.blue_team_goal_anim = Animation(duration=10)
+        self.blue_team_goal_anim.bind(on_start=partial(self.switch_subscreens, "blueGoal"),
+                                      on_complete=partial(self.switch_subscreens, "scoreDisplay"))
+        self.blue_team_goal_anim.start(self)
+
+    def resume_time(self, startTime, duration):
+        clockStartTimeInMs = startTime - int(round(time.time() * 1000))
+        if clockStartTimeInMs <= 0:
+            Logger.info("MediaApp->resume_time: Starting timer late or now")
+            reducedTime = duration + (clockStartTimeInMs/1000.0)
+            self.run_animation(reducedTime, 0)
+        else:
+            Logger.info(f"MediaApp->resume_time: Setting timer for later {clockStartTimeInMs/1000.0}")
+            Clock.schedule_once(partial(self.run_animation, duration),
+                clockStartTimeInMs/1000.0)
+
+
+    def pause_time(self, stopTime):
+        # In the future I need to put a blink on the text for this.
+        Animation.cancel_all(self)
+        self.seconds = stopTime
 
 class MediaApp(App):
     def on_start(self):

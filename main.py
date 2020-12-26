@@ -21,10 +21,11 @@ from math import floor
 import platform, re, random
 from datetime import datetime
 import time
+from functools import partial
 import subprocess as subp
 import asyncio
 from ipc.communicator import InstructionServer
-from ipc.message import ScreenChange, DeclareWinner, CountDown
+from ipc.message import *
 import json
 
 
@@ -176,8 +177,7 @@ class DeathmatchScreen(Screen):
 
 class CountDownTrigger:
     __doc__ = '''All runtimes given in seconds'''
-    def __init__(self, arena):
-        self.arena = arena
+    def __init__(self):
         self.stop_time = 0
         self.start_time = 0
         self.increment = 0
@@ -199,31 +199,10 @@ class CountDownTrigger:
         if self.start_time > matchDuration:
             runDuration = self.start_time - matchDuration
             self.start_time = matchDuration
-        # self.increment = runDuration / lightCount
         self.number_of_lights_on = 0
         self.time_increment_elapsed = 0
         self.color = color
         self.on_complete = on_complete
-    
-    def on_seconds_tick(self, seconds):
-        if self.did_complete:
-            return
-        if not self.is_active:
-            if self.start_time <= seconds:
-                self.is_active = True
-                self.arena.set_led(0, *self.color)
-                self.time_increment_elapsed += self.increment
-                while self.time_increment_elapsed <= seconds:
-                    self.arena.set_led(self.number_of_lights_on, *self.color)
-                    self.number_of_lights_on += 1
-        else:
-            # turn on any lights that remain.
-            while self.time_increment_elapsed <= seconds:
-                self.arena.set_led(self.number_of_lights_on, *self.color)
-                self.number_of_lights_on += 1
-            if seconds <= self.stop_time:
-                self.did_complete = True
-                self.on_complete()
         
     def dump(self, name):
         print("Stats for", name)
@@ -258,16 +237,23 @@ class RunDeathmatchScreen(Screen):
     def __init__(self, **kwargs): 
         self.register_event_type("on_drop_doors")
         super(RunDeathmatchScreen, self).__init__(**kwargs)
-        self.match_over_trigger = CountDownTrigger(App.get_running_app().arena)
-        self.door_drop_trigger = CountDownTrigger(App.get_running_app().arena)
+        self.match_over_trigger = CountDownTrigger()
+        self.door_drop_trigger = CountDownTrigger()
         self.will_drop_doors = False
         self.match_over_active = False
         self.cd_animation = None
         self.ddColor = DD_YELLOW
         self.match_olver_color = MATCH_COUNT_DOWN_RED
 
+    def _do_reset(self, app, root, deltaTime):
+        
+        self.ids.countDownClock.start(self.dmData.duration)
+        Logger.info("MainApp->RunDeathMatchScreen->_do_reset: Completed screen reset")
+        return False
+
     def reset_screen(self, app, root):
-        self.dd_seconds = 0
+        # Sending command to start countdown
+        Logger.info("MainApp->RunDeathMatchScreen->reset_screen: Scheduling reset")
         self.will_drop_doors = False
         self.match_over_trigger.reset(0, 30,
             App.get_running_app().get_led_count(),
@@ -295,7 +281,10 @@ class RunDeathmatchScreen(Screen):
             self.door_drop_trigger.reset(self. dmData.door_drop_duration,
                 15, App.get_running_app().get_led_count(), self.dmData.duration,
                 DD_YELLOW, self.on_completed_door_drop_count_down)
-
+        self.match_start_time = round(time.time() * 1000) + 300
+        app.send_run_deathmatch_cmd(self.match_start_time, self.dmData.duration, self.will_drop_doors,
+                                    self.door_drop_trigger.start_time, self.door_drop_trigger.stop_time)
+        Clock.schedule_once(partial(self._do_reset, app, root), 0.3)
 
     def on_completed_door_drop_count_down(self):
         print("COmpleted door drop count down")
@@ -468,17 +457,24 @@ class RunSoccerScreen(Screen):
     def on_pause_play_button_text(self, instance, value):
         pass
 
+    def _do_resume(self, deltaTime):
+        self.ids.countDownClock.resume()
+        self.pause_play_button_text = RunSoccerScreen.PauseGameStr
+
     def play_pause_pressed(self):
         if self.pause_play_button_text == RunSoccerScreen.PauseGameStr:
             self.ids.countDownClock.pause()
+            App.get_running_app().send_pause_soccer_cmd(self.ids.countDownClock.seconds)
         else:
-            self.ids.countDownClock.resume()
-            self.pause_play_button_text = RunSoccerScreen.PauseGameStr
+            match_start_time = round(time.time() * 1000) + 300
+            App.get_running_app().send_resume_soccer_cmd(match_start_time, self.ids.countDownClock.seconds)
+            Clock.schedule_once(self._do_resume, 0.3)
+
 
     def pause_count_down(self):
         Animation.cancel_all(self)
-
-    def resume_count_down(self):
+        
+    def _do_resume_count_down(self, duration, *Args):
         duration = self.ids.countDownClock.seconds
         self.prev_light = -1
         if duration <= 30:
@@ -490,6 +486,18 @@ class RunSoccerScreen(Screen):
                     cd_lights=int(App.get_running_app().get_led_count())-1,
                     duration=30))
         self.cd_anim.start(self)
+
+    def start_count_down(self):
+        match_start_time = round(time.time() * 1000) + 300
+        App.get_running_app().send_run_soccer_cmd(match_start_time, self.smData.duration,
+            self.smData.get_team_one_name(),  self.smData.get_team_two_name())
+        Clock.schedule_once(partial(self._do_resume_count_down, self.smData.duration), 0.3)
+        
+    def resume_count_down(self):
+        match_start_time = round(time.time() * 1000) + 300
+        # App.get_running_app().send_run_soccer_cmd(startTime, self.smData.duration,
+        #     self.smData.team_one_name,  self.smData.team_two_name)
+        Clock.schedule_once(partial(self._do_resume_count_down, self.smData.duration), 0.3)
         
     def on_cd_lights(self, instance, value):
         if self.prev_light == -1:
@@ -505,6 +513,14 @@ class RunSoccerScreen(Screen):
     def on_max_score_reached(self):
         pass
 
+    def handle_on_team_one_scored(self):
+        App.get_running_app().send_red_scored_cmd(self.data.team_one_score,
+            self.ids.countDownClock.seconds)
+
+    def handle_on_team_two_scored(self):
+        App.get_running_app().send_blue_scored_cmd(self.data.team_two_score,
+            self.ids.countDownClock.seconds)
+
     def on_team_one_scored(self, instance, value):
         if self.pause_play_button_text == RunSoccerScreen.PauseGameStr:
             self.ids.countDownClock.pause()
@@ -515,6 +531,7 @@ class RunSoccerScreen(Screen):
     def on_team_two_scored(self, instance, value):
         if self.pause_play_button_text == RunSoccerScreen.PauseGameStr:
             self.ids.countDownClock.pause()
+
         if int(value) == int(self.smData.points):
             self.dispatch("on_max_score_reached")
 
@@ -1103,6 +1120,48 @@ class MainApp(App):
         Logger.info(f"MainApp: calling send_countdown_cmd with text {finalWord}")
         msg = CountDown(finalWord)
         asyncio.create_task(self.server.send_to_all(msg.to_json()))
+
+    def send_run_deathmatch_cmd(self, startTime, duration, willDropDoors, dd_cd_startTime, dd_cd_endTime):
+        Logger.info(f"MainApp: calling send run Deathmatch")
+        msg = RunDeathMatchMsg(startTime, duration, willDropDoors,
+                               dd_cd_startTime, dd_cd_endTime)
+        asyncio.create_task(self.server.send_to_all(msg.to_json()))
+
+    def send_run_soccer_cmd(self, startTime, duration, redName, blueName):
+        Logger.info(f"MainApp: calling send run soccer")
+        asyncio.create_task(
+            self.server.send_to_all(
+                RunSoccerMsg(startTime, duration, redName, blueName).to_json()))
+
+    def send_update_soccer_score_cmd(self, redScore, blueScore):
+        Logger.info(f"MainApp: calling send update soccer score")
+        asyncio.create_task(
+            self.server.send_to_all(
+                UpdateSoccerScore(redScore, blueScore).to_json()))
+
+    def send_red_scored_cmd(self, redScore, matchTime):
+        Logger.info(f"MainApp: calling send red scored")
+        asyncio.create_task(
+            self.server.send_to_all(
+                RedScoredGoal(redScore, matchTime).to_json()))
+
+    def send_blue_scored_cmd(self, blueScore, matchTime):
+        Logger.info(f"MainApp: calling send blue scored")
+        asyncio.create_task(
+            self.server.send_to_all(
+                BlueScoredGoal(blueScore, matchTime).to_json()))
+        
+    def send_resume_soccer_cmd(self, startTime, duration):
+        Logger.info(f"MainApp: calling send resume soccer")
+        asyncio.create_task(
+            self.server.send_to_all(
+                ResumeSoccer(startTime, duration).to_json()))
+
+    def send_pause_soccer_cmd(self, curTime):
+        Logger.info(f"MainApp: calling send resume soccer")
+        asyncio.create_task(
+            self.server.send_to_all(
+                PauseSoccer(curTime).to_json()))
 
     def build(self):
         root_widget = ScreenManagement()

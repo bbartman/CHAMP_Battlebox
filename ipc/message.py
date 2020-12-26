@@ -19,9 +19,14 @@ class IPCMessage:
         return json.dumps(self, cls=IPCMessageEncoder)
 
 class ScreenChange(IPCMessage):
-    def __init__(self, scrn):
+    def __init__(self, *args, **kwargs):
         super().__init__()
-        self.screen = scrn
+        self.screen = ""
+        if len(args):
+            self.screen = args[0]
+            return
+        if "screen" in kwargs:
+            self.screen = kwargs["screen"]
 
     def do_action(self, app, root):
         # We ignore this because we will have another message that will
@@ -36,9 +41,14 @@ class ScreenChange(IPCMessage):
         root.transition.direction = 'left'
 
 class DeclareWinner(IPCMessage):
-    def __init__(self, msg):
+    def __init__(self, *args, **kwargs):
         super().__init__()
-        self.victory_msg = msg
+        self.victory_msg = ""
+        if len(args):
+            self.victory_msg = args[0]
+            return
+        if "victory_msg" in kwargs:
+            self.victory_msg = kwargs["victory_msg"]
 
     def do_action(self, app, root):
         temp = app.root.get_screen('VictoryScreen')
@@ -47,51 +57,206 @@ class DeclareWinner(IPCMessage):
         root.transition.direction = 'left'
 
 class CountDown(IPCMessage):
-    def __init__(self, finalText):
+    def __init__(self, *args, **kwargs):
         super().__init__()
-        self.final_text = finalText
+        self.final_text = ""
+        if len(args):
+            self.final_text = args[0]
+            return
+        if "final_text" in kwargs:
+            self.final_text = kwargs["final_text"]
 
     def do_action(self, app, root):
         cds = app.root.get_screen('CountDownScreen')
         cds.do_countdown(self.ts, self.final_text)
 
-class MatchStartsAt(IPCMessage):
-    def __init__(self, startingTS, Duration):
+class RunDeathMatchMsg(IPCMessage):
+    def __init__(self, *args, **kwargs):
         super().__init__()
-        self.start_time_stamp = startingTS
-        self.duration_seconds = Duration
+        self.start_time_stamp = 0
+        self.duration = 0
+
+        if len(args) != 0:
+            if len(args) != 5:
+                raise ValueError("Incorrect number of argument.")
+            self.start_time_stamp = args[0]
+            self.duration = args[1]
+            self.will_drop_doors = args[2]
+            self.dd_count_down_start_time = args[3]
+            self.dd_end_time = args[4]
+            return
+
+        if "start_time_stamp" in kwargs:
+            self.start_time_stamp = kwargs["start_time_stamp"]
+
+        if "duration" in kwargs:
+            self.duration = kwargs["duration"]
+
+        if "will_drop_doors" in kwargs:
+            self.will_drop_doors = kwargs["will_drop_doors"]
+
+        if "dd_count_down_start_time" in kwargs:
+            self.dd_count_down_start_time = kwargs["dd_count_down_start_time"]
+
+        if "dd_end_time" in kwargs:
+            self.dd_end_time = kwargs["dd_end_time"]
 
     def do_action(self, app, root):
-        # cds = app.root.get_screen('CountDownScreen')
-        # cds.do_countdown(self.ts, self.final_text)
-        # Make this work for both run deathmatch AND run soccer
-        pass
+        rdms = app.root.get_screen('RunDeathmatch')
+        rdms.configure_screen(self.start_time_stamp, self.duration, self.will_drop_doors,
+            self.dd_count_down_start_time, self.dd_end_time)
 
-class ClockSync(IPCMessage):
-    """Used for synchronizing clocks between main and media applications.
-    This is used for associating a match time with current computer timestamp, then
-    figuring out how to compensate for not 100% synchronous times."""
-    def __init__(self, matchTime):
-        self.match_time = matchTime
-        # self.time_stamp = CurTS
+
+class RunSoccerMsg(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.start_time_stamp = 0
+        self.duration = 0
+        self.red_team_name = ""
+        self.blue_team_name = ""
+
+        if len(args) != 0:
+            if len(args) != 4:
+                raise ValueError("Incorrect number of argument.")
+            self.start_time_stamp = args[0]
+            self.duration = args[1]
+            self.red_team_name = args[2]
+            self.blue_team_name = args[3]
+            return
+
+        if "start_time_stamp" in kwargs:
+            self.start_time_stamp = kwargs["start_time_stamp"]
+
+        if "duration" in kwargs:
+            self.duration = kwargs["duration"]
+
+        if "red_team_name" in kwargs:
+            self.red_team_name = kwargs["red_team_name"]
+
+        if "blue_team_name" in kwargs:
+            self.blue_team_name = kwargs["blue_team_name"]
 
     def do_action(self, app, root):
-        # cds = app.root.get_screen('CountDownScreen')
-        # cds.do_countdown(self.ts, self.final_text)
-        # Make this work for both run deathmatch AND run soccer
-        pass
-# This may only be useful if we 100% need to make sure that time is
-# synchronized
-# class MatchClockTick(IPCMessage):
-#     def __init__(self, matchTime):
-#         self.current_time = matchTime
+        rss = app.root.get_screen('RunSoccer')
+        rss.configure_screen(self.start_time_stamp, self.duration, self.red_team_name,
+            self.blue_team_name)
 
-#     def do_action(self, app, root):
-#         # cds = app.root.get_screen('CountDownScreen')
-#         # cds.do_countdown(self.ts, self.final_text)
-#         pass
+class UpdateSoccerScore(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.red_score = ""
+        self.blue_score = ""
 
-MessageTypes = [ScreenChange, CountDown, DeclareWinner, MatchStartsAt]
+        if len(args) != 0:
+            if len(args) != 2:
+                raise ValueError("Incorrect number of argument.")
+            self.red_score = args[0]
+            self.blue_score = args[1]
+            return
+
+        if "red_score" in kwargs:
+            self.red_score = kwargs["red_score"]
+
+        if "blue_score" in kwargs:
+            self.blue_score = kwargs["blue_score"]
+
+    def do_action(self, app, root):
+        rdms = app.root.get_screen('RunSoccer')
+        rdms.update_score(self.red_score, self.blue_score)
+
+class RedScoredGoal(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.match_time = 0
+        self.red_score = 0
+
+        if len(args) != 0:
+            if len(args) != 2:
+                raise ValueError("Incorrect number of argument.")
+            self.red_score = args[0]
+            self.match_time = args[1]
+            return
+
+        if "red_score" in kwargs:
+            self.red_score = kwargs["red_score"]
+
+        if "match_time" in kwargs:
+            self.match_time = kwargs["match_time"]
+
+    def do_action(self, app, root):
+        rdms = app.root.get_screen('RunSoccer')
+        rdms.red_scored(self.red_score, self.match_time)
+
+class BlueScoredGoal(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.match_time = 0
+        self.blue_score = 0
+
+        if len(args) != 0:
+            if len(args) != 2:
+                raise ValueError("Incorrect number of argument.")
+            self.blue_score = args[0]
+            self.match_time = args[1]
+            return
+
+        if "blue_score" in kwargs:
+            self.blue_score = kwargs["blue_score"]
+
+        if "match_time" in kwargs:
+            self.match_time = kwargs["match_time"]
+
+    def do_action(self, app, root):
+        rdms = app.root.get_screen('RunSoccer')
+        rdms.blue_scored(self.blue_score, self.match_time)
+
+
+class ResumeSoccer(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.start_time_stamp = 0
+        self.duration = 0
+
+        if len(args) != 0:
+            if len(args) != 2:
+                raise ValueError("Incorrect number of argument.")
+            self.start_time_stamp = args[0]
+            self.duration = args[1]
+            return
+
+        if "start_time_stamp" in kwargs:
+            self.start_time_stamp = kwargs["start_time_stamp"]
+
+        if "duration" in kwargs:
+            self.duration = kwargs["duration"]
+
+    def do_action(self, app, root):
+        rdms = app.root.get_screen('RunSoccer')
+        rdms.resume_time(self.start_time_stamp, self.duration)
+
+class PauseSoccer(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.duration = 0
+
+        if len(args) != 0:
+            if len(args) != 1:
+                raise ValueError("Incorrect number of argument.")
+            self.stop_time = args[0]
+            return
+
+        if "stop_time" in kwargs:
+            self.stop_time = kwargs["stop_time"]
+
+    def do_action(self, app, root):
+        rdms = app.root.get_screen('RunSoccer')
+        rdms.pause_time(self.stop_time)
+        
+
+
+MessageTypes = [ScreenChange, CountDown, DeclareWinner, RunDeathMatchMsg, RunSoccerMsg,
+                UpdateSoccerScore, RedScoredGoal, BlueScoredGoal, ResumeSoccer,
+                PauseSoccer]
 TypesToCreate = { x.__name__: x for x in MessageTypes }
 
 class IPCMessageEncoder(json.JSONEncoder):
@@ -105,23 +270,20 @@ class IPCMessageEncoder(json.JSONEncoder):
 
 def decode_from_json(jsonStr):
     s = json.loads(jsonStr)
+    kindStr = s["kind"]
     if s["kind"] not in TypesToCreate:
         Logger.warning(f"decode_from_json: Received invalid message ={jsonStr}")
-        kindStr = s["kind"]
-        raise Exception(f"Invalid message kind {kindStr}")
+        raise ValueError(f"Invalid message kind {kindStr}")
 
     cmdObj = None
-    if ScreenChange.__name__ == s["kind"]:
-        Logger.info("decode_from_json: Received screen change")
-        cmdObj = ScreenChange(s["screen"])
+    ty = TypesToCreate.get(kindStr, None)
+    if ty is None:
+        raise ValueError(f"Invalid type to create {kindStr}")
 
-    elif CountDown.__name__ == s["kind"]:
-        Logger.info("decode_from_json: Received countdown")
-        cmdObj = CountDown(s["final_text"])
+    if not isinstance(s, dict):
+        raise ValueError(f"Invalid message format {jsonStr}")
 
-    elif DeclareWinner.__name__ == s["kind"]:
-        Logger.info("decode_from_json: Received DeclareWinner")
-        cmdObj = DeclareWinner(s["victory_msg"])
+    cmdObj = ty(**s)
 
     Logger.info("decode_from_json: Completed translation")
     cmdObj.ts = s["ts"]

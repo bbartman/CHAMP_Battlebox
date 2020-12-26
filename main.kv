@@ -345,7 +345,8 @@
         countDownClock.start(rss.smData.duration)
         rss.cd_lights = 0
         rss.prev_light = -1
-        rss.resume_count_down()
+        rss.start_count_down()
+        # rss.resume_count_down()
         rss.pause_play_button_text = "Pause\nGame"
     StackLayout:
         size_hint: [1, 1]
@@ -410,7 +411,7 @@
                         on_release:
                             rss.data.team_one_score += 1
                             app.lights_soccer_team_2_scored()
-
+                            rss.handle_on_team_one_scored()
                     Button:
                         text: 'Team 1\nWins'
                         font_size: 30
@@ -437,6 +438,7 @@
                         on_release:
                             rss.data.team_two_score += 1
                             app.lights_soccer_team_2_scored()
+                            rss.handle_on_team_two_scored()
         
                     Button:
                         text: 'Team 2\nWins' 
@@ -479,11 +481,13 @@
                             font_size:30
                             on_release:
                                 mssas.data.team_one_score += 1
+                                app.send_update_soccer_score_cmd(mssas.data.team_one_score, mssas.data.team_two_score)
                         Button:
                             text: '-'
                             font_size:30
                             on_release:
                                 mssas.data.team_one_score -= 1
+                                app.send_update_soccer_score_cmd(mssas.data.team_one_score, mssas.data.team_two_score)
                     Button:
                         size_hint:[1, .2]
                         text: "Done"
@@ -500,14 +504,13 @@
                             font_size:30
                             on_release:
                                 mssas.data.team_two_score += 1
+                                app.send_update_soccer_score_cmd(mssas.data.team_one_score, mssas.data.team_two_score)
                         Button:
                             text: '-'
                             font_size:30
                             on_release:
                                 mssas.data.team_two_score -= 1
-
-
-
+                                app.send_update_soccer_score_cmd(mssas.data.team_one_score, mssas.data.team_two_score)
 
 <RunDeathmatchScreen>
     name: 'RunDeathmatch'
@@ -515,9 +518,9 @@
     dmData: app.data.death_match
     id: rdms
     on_pre_enter:
-        self.reset_screen(app, root)
         app.lights_death_match()
-        countDownClock.start(rdms.dmData.duration)
+        self.reset_screen(app, root)
+
     StackLayout:
         GridLayout:
             cols: 3

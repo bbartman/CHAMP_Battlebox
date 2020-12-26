@@ -43,17 +43,47 @@
             anim_delay: 0
             anim_loop: 0
 
-<MatchScreen>
+
+
+<RunDeathmatchScreen>
+    name: 'RunDeathmatch'
+    id:rdms
+    dd_prog_value: 0
+    on_pre_enter:
+        rdms.dd_prog_value = 0
+        ddDisplay.current = "nodd"
     GridLayout:
         cols: 1
         Label:
+            size_hint:[1, .75]
             id: time
             text:"Time"
             font_size: 300
-
-<RunDeathmatchScreen@MatchScreen>
-    name: 'RunDeathmatch'
-
+        ScreenManager:
+            id: ddDisplay
+            Screen:
+                name: "nodd"
+                size_hint:[1, 1]
+            Screen:
+                name: "dd"
+                size_hint:[1, 1]
+                GridLayout:
+                    cols: 1
+                    Label:
+                        text:"Door Drop Progress"
+                        font_size: 40
+                    ProgressBar:
+                        id:pb
+                        max:1000
+                        value:rdms.dd_prog_value
+            Screen:
+                name: "postdd"
+                size_hint:[1, 1]
+                GridLayout:
+                    cols: 1
+                    Label:
+                        text:"Doors Are Open"
+                        font_size: 40
 <SoccerScreen@Screen>:
     name: 'Soccer'
     GridLayout:
@@ -62,8 +92,58 @@
             text:"Soccer"
             font_size: 80
 
-<RunSoccerScreen@MatchScreen>
+<RunSoccerScreen>
     name: "RunSoccer"
+    id:rss
+    ScreenManager:
+        id:sm
+        Screen:
+            name: "scoreDisplay"
+            GridLayout:
+                cols: 1
+                size_hint: [1, 1]
+                GridLayout:
+                    cols: 3
+                    size_hint: [1, .3]
+                    Label:
+                        text: rss.red_team_name
+                        font_size:80
+                    Label:
+                        text:""
+                        font_size:10
+                    Label:
+                        text: rss.blue_team_name
+                        font_size:80
+                GridLayout:
+                    cols: 3
+                    size_hint: [1, .3]
+                    Label:
+                        text: str(rss.red_score)
+                        font_size:80
+                    Label:
+                        text:"-"
+                        font_size:150
+                    Label:
+                        text: str(rss.blue_score)
+                        font_size:80
+                Label:
+                    id: time
+                    text:str(round(rss.seconds, 1))
+                    font_size: 300
+        Screen:
+            name:"redGoal"
+            GridLayout:
+                cols:1
+                Label:
+                    text:rss.red_team_name + "\nGOAL!!!!!"
+                    font_size: 300
+        Screen:
+            name:"blueGoal"
+            GridLayout:
+                cols:1
+                Label:
+                    text:rss.blue_team_name + "\nGOAL!!!!!"
+                    font_size: 300
 
 
 <MatchOver@Screen>
