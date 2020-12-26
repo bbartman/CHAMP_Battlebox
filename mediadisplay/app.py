@@ -41,8 +41,71 @@ from ipc.communicator import connect_to_main_server
 class MediaScreenManager(ScreenManager):
     pass
 
-class PymunkDemo(RelativeLayout):
+class CDLabel(Label):
+    def __init__(self, **kwargs): 
+        super().__init__(**kwargs)
+        self.finalWord = ""
 
+    def start_animation(self, finalWord):
+        self.finalWord = finalWord
+        self.final_text = ""
+
+    def on_start_3(self, animation, widget):
+        self.color = [1,1,1,0]
+        self.text = "3"
+
+    def on_start_2(self, animation, widget):
+        # self.color = [1,1,1,0]
+        self.text = "2"
+
+    def on_start_1(self, animation, widget):
+        # self.color = [1,1,1,0]
+        self.text = "1"
+
+    def on_start_final(self, animation, widget):
+        self.text = self.final_text
+        # self.color = [1,1,1,0]
+
+    def start_animation(self, tsSent, finalText):
+        # Clearing any previous text.
+        self.final_text = finalText
+        self.text = ""
+        self.color = [1, 1, 1, 0]
+        # Converting current time into milliseconds offset from current tick.
+        skew = 1.0 - ((int(round(time.time() * 1000)) - tsSent)/1000.0)
+        # Building complicated count down animation.
+        A1 = Animation(color=[1,1,1,0.7], duration=skew) + Animation(color=[1,1,1,0], duration=0)
+        A1.bind(on_start=self.on_start_3)
+
+        A2 = Animation(color=[1,1,1,0.7], duration=1.0)+ Animation(color=[1,1,1,0], duration=0)
+        A2.bind(on_start=self.on_start_2)
+        
+        A3 = Animation(color=[1,1,1,0.7], duration=1.0) + Animation(color=[1,1,1,0], duration=0)
+        A3.bind(on_start=self.on_start_1)
+        
+        A4 = Animation(color=[1, 1, 1, 0.7], duration=0.3)
+        A4.bind(on_start=self.on_start_final)
+
+        self.anim = A1 + A2 + A3 + A4
+        self.anim.start(self)
+
+    def cancel_animation(self):
+        self.anim.cancel(self)
+
+class CountDownScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def on_leave(self):
+        self.stop_count_down()
+
+    def do_countdown(self, tsSent, finalText):
+        self.ids.counter.start_animation(tsSent, finalText)
+
+    def stop_count_down(self):
+        self.ids.counter.cancel_animation()
+
+class PymunkDemo(RelativeLayout):
     def cannon(self, space, startingPosition = (0, 20), xDirModifier=1):
         mass = 10
         moment = pymunk.moment_for_box(mass, (20, 20))
@@ -176,6 +239,9 @@ class VictoryScreen(Screen):
     
     def reset_screen(self, VictoryText):
         self.ids.victoryText .text = VictoryText
+
+class MatchScreen(Screen):
+    pass
 
 class MediaApp(App):
     def on_start(self):

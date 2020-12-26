@@ -37,17 +37,22 @@
     name: 'Deathmatch'
     GridLayout:
         cols: 1
-        Label:
-            text:"Deathmatch"
-            font_size: 80
+        Image:
+            source: "media/Deathmatch_Final.png"
+            allow_stretch: True
+            anim_delay: 0
+            anim_loop: 0
 
-<RunDeathmatchScreen@Screen>
-    name: 'RunDeathmatch'
+<MatchScreen>
     GridLayout:
         cols: 1
         Label:
-            text:"Run Deathmatch"
-            font_size: 80
+            id: time
+            text:"Time"
+            font_size: 300
+
+<RunDeathmatchScreen@MatchScreen>
+    name: 'RunDeathmatch'
 
 <SoccerScreen@Screen>:
     name: 'Soccer'
@@ -57,13 +62,9 @@
             text:"Soccer"
             font_size: 80
 
-<RunSoccerScreen@Screen>
+<RunSoccerScreen@MatchScreen>
     name: "RunSoccer"
-    GridLayout:
-        cols: 1
-        Label:
-            text:"Run Soccer"
-            font_size: 80
+
 
 <MatchOver@Screen>
     name: 'MatchOver'
@@ -100,12 +101,6 @@
         pymunk.stop()
     FloatLayout:
         PymunkDemo:
-            # canvas:
-            #     Color:
-            #         rgba: 52/255.0, 235/255.0, 73/255.0, 1
-            #     Rectangle:
-            #         pos: self.pos
-            #         size: self.size
             id: pymunk
             size_hint: [1, 1]
         Image:
@@ -122,10 +117,11 @@
                 id: victoryText
                 font_size: 80
 
-<CountDownScreen@Screen>
+<CountDownScreen>
     name: "CountDownScreen"
     GridLayout:
         cols: 1
-        Label:
+        CDLabel:
+            id: counter
             text:"Count down"
-            font_size: 80
+            font_size: 300

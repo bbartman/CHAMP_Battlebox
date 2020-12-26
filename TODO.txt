@@ -37,30 +37,57 @@ Options/nice to haves:
 
 
 Media Screens:
-	Idle screen:
-		Spinning coin image.
 
 	Configuring deathmatch screen:
-		- Something goes woosh onto the screen that says deathmatch?
-		- Silver Death match letters with wires and things on them.
-			- Maybe add plastic bits, and scuff marks.
 		Sound - "Deathmatch"
 
 	Configure Soccer Screen:
-		- Image with soccer ball and broken circuits?
+		- Working on image.
 		Sound - "Blood sports ball"
+			1. "Soccer"
+			2. "GO"
+
+	RunDeathmatchScreen
+		- Needs to display time,
+		-	as well as the door drop time information.
+
+	RunSoccerScreen
+		- No sound with the exception of scoring a goal.
+		- When a goal is scored we may need a goal scored screen.
+		- Needs to track score
+		- Needs to display time
 
   Waiting for players and doors screen:
 		- Have something indicating that doors need to close.
 		- Have something indicating door status.
+		Sounds
+				- Maybe a buzzer noise for if the player pushes the button without
+				the door closed?
+				- Cocking a gun noise for door closed? Some kind of metalic ca-ching noise would be fine
+					Followed by a bing sound.
+					- Suggestions for metalic noises
+						1. Lock closing shackle
+						2. Cocking a gun
+						3. Dropping a metal on a another piece of metal
+				- A Polite bing noise indicating that a player is ready.
+				- buzzer noise if we exit configuration.
+
+
 
 
 	Count down screen:
-		- Need to do coordinated display etc... This MIGHt be best handled
-			by the fact that communication is fast on domain sockets.
+		Sounds "3"
+					 "2"
+					 "1"
+					 "GO" - I'm not else what to put for soccer?
+					 "FIGHT" - death match
+
+	
 
 	Victory Screen:
-		Need to display winner name and possibly some confetti or something?
+		Sounds
+			This needs a kazoo noise.
 	
-	Deathmatch - Match over and no winner selected yet:
-		- Something that would work for both soccer and death match?
+	MatchOver - Match over and no winner selected yet:
+		Sound
+			- It would be really funny to put the jeopardy thinking theme music here.

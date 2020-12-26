@@ -47,16 +47,51 @@ class DeclareWinner(IPCMessage):
         root.transition.direction = 'left'
 
 class CountDown(IPCMessage):
-    def __init__(self):
+    def __init__(self, finalText):
         super().__init__()
-        self.screen = scrn
+        self.final_text = finalText
 
     def do_action(self, app, root):
-        Logger.info("Count down action not received yet")
-        # root.current = self.screen
-        # root.transition.direction = 'down'
+        cds = app.root.get_screen('CountDownScreen')
+        cds.do_countdown(self.ts, self.final_text)
 
-MessageTypes = [ScreenChange, CountDown, DeclareWinner]
+class MatchStartsAt(IPCMessage):
+    def __init__(self, startingTS, Duration):
+        super().__init__()
+        self.start_time_stamp = startingTS
+        self.duration_seconds = Duration
+
+    def do_action(self, app, root):
+        # cds = app.root.get_screen('CountDownScreen')
+        # cds.do_countdown(self.ts, self.final_text)
+        # Make this work for both run deathmatch AND run soccer
+        pass
+
+class ClockSync(IPCMessage):
+    """Used for synchronizing clocks between main and media applications.
+    This is used for associating a match time with current computer timestamp, then
+    figuring out how to compensate for not 100% synchronous times."""
+    def __init__(self, matchTime):
+        self.match_time = matchTime
+        # self.time_stamp = CurTS
+
+    def do_action(self, app, root):
+        # cds = app.root.get_screen('CountDownScreen')
+        # cds.do_countdown(self.ts, self.final_text)
+        # Make this work for both run deathmatch AND run soccer
+        pass
+# This may only be useful if we 100% need to make sure that time is
+# synchronized
+# class MatchClockTick(IPCMessage):
+#     def __init__(self, matchTime):
+#         self.current_time = matchTime
+
+#     def do_action(self, app, root):
+#         # cds = app.root.get_screen('CountDownScreen')
+#         # cds.do_countdown(self.ts, self.final_text)
+#         pass
+
+MessageTypes = [ScreenChange, CountDown, DeclareWinner, MatchStartsAt]
 TypesToCreate = { x.__name__: x for x in MessageTypes }
 
 class IPCMessageEncoder(json.JSONEncoder):
@@ -82,15 +117,12 @@ def decode_from_json(jsonStr):
 
     elif CountDown.__name__ == s["kind"]:
         Logger.info("decode_from_json: Received countdown")
-        cmdObj = CountDown()
-        for key in cmd:
-            setattr(cmdObj, key, cmd[key])
+        cmdObj = CountDown(s["final_text"])
 
     elif DeclareWinner.__name__ == s["kind"]:
         Logger.info("decode_from_json: Received DeclareWinner")
         cmdObj = DeclareWinner(s["victory_msg"])
-        # for key in cmd:
-        #     setattr(cmdObj, key, cmd[key])
+
     Logger.info("decode_from_json: Completed translation")
     cmdObj.ts = s["ts"]
     Logger.info("decode_from_json: Exiting function")

@@ -24,7 +24,7 @@ import time
 import subprocess as subp
 import asyncio
 from ipc.communicator import InstructionServer
-from ipc.message import ScreenChange, DeclareWinner
+from ipc.message import ScreenChange, DeclareWinner, CountDown
 import json
 
 
@@ -946,10 +946,10 @@ class FadeTicker(Label):
     def __init__(self, **kwargs): 
         self.register_event_type("on_ready")
         super(FadeTicker, self).__init__(**kwargs)
+
     def on_led_brightness(self, instance, value):
         App.get_running_app().arena.led_brightness(floor(value))
 
-    # FIXME: Color order is wrong.
     def finish_callback_3(self, animation, Ticker):
         App.get_running_app().arena.led_brightness_and_fill(10, *STOP_LIGHT_ORANGE)
         self._do_animation(2, self.finish_callback_2)
@@ -984,6 +984,7 @@ class FadeTicker(Label):
     def start(self):
         Animation.cancel_all(self)
         App.get_running_app().arena.led_brightness_and_fill(10, *STOP_LIGHT_RED)
+        App.get_running_app().send_countdown_cmd(self.final_word)
         self._do_animation(3, self.finish_callback_3)
 
     def on_seconds(self, instance, value):
@@ -1045,9 +1046,6 @@ if platform.system() != 'Windows':
     from arena.physicalarena import Arena
     HWProp = Arena
 
-# def exit_media_app(app):
-#     app.stop()
-
 class MainApp(App):
     data = BBViewModelProp()
     arena = HWProp()
@@ -1099,6 +1097,11 @@ class MainApp(App):
     def send_victory_screen_cmd(self, Name):
         Logger.info(f"MainApp: calling send_victory_screen_cmd with text {Name}")
         msg = DeclareWinner(Name)
+        asyncio.create_task(self.server.send_to_all(msg.to_json()))
+
+    def send_countdown_cmd(self, finalWord):
+        Logger.info(f"MainApp: calling send_countdown_cmd with text {finalWord}")
+        msg = CountDown(finalWord)
         asyncio.create_task(self.server.send_to_all(msg.to_json()))
 
     def build(self):
