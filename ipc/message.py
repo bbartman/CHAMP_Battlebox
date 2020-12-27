@@ -7,8 +7,7 @@ ScreenMap = {
 }
 
 class IPCMessage:
-    def __init__(self):
-        super(IPCMessage, self).__init__()
+    def __init__(self, *args, **kwargs):
         self.kind = type(self).__name__
 
     def do_action(self, app, root):
@@ -237,7 +236,7 @@ class ResumeSoccer(IPCMessage):
 class PauseSoccer(IPCMessage):
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.duration = 0
+        self.stop_time = 0
 
         if len(args) != 0:
             if len(args) != 1:
@@ -253,10 +252,91 @@ class PauseSoccer(IPCMessage):
         rdms.pause_time(self.stop_time)
         
 
+class PlayerReadyStatus(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.p1_ready = False
+        self.p2_ready = False
+
+        if len(args) != 0:
+            if len(args) != 2:
+                raise ValueError("Incorrect number of argument.")
+            self.p1_ready = args[0]
+            self.p2_ready = args[1]
+            return
+
+        if "p1_ready" in kwargs:
+            self.p1_ready = kwargs["p1_ready"]
+
+        if "p2_ready" in kwargs:
+            self.p2_ready = kwargs["p2_ready"]
+
+    def do_action(self, app, root):
+        raise Exception("PlayerReadyStatus Working on it")
+        # rdms = app.root.get_screen('RunSoccer')
+        # rdms.pause_time(self.stop_time)
+
+class PlayerReadyWithDoorsStatus(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.p1_ready = False
+        self.p2_ready = False
+        self.p1_door = False
+        self.p2_door = False
+
+
+        if len(args) != 0:
+            if len(args) != 4:
+                raise ValueError("Incorrect number of argument.")
+            self.p1_ready = args[0]
+            self.p2_ready = args[1]
+            self.p1_door = args[2]
+            self.p2_door = args[3]
+            return
+
+        if "p1_ready" in kwargs:
+            self.p1_ready = kwargs["p1_ready"]
+
+        if "p2_ready" in kwargs:
+            self.p2_ready = kwargs["p2_ready"]
+
+        if "p1_door" in kwargs:
+            self.p1_door = kwargs["p1_door"]
+
+        if "p2_door" in kwargs:
+            self.p2_door = kwargs["p2_door"]
+
+    def do_action(self, app, root):
+        scrn = app.root.get_screen('WaitForPlayersAndDoors')
+        scrn.red_status = self.p1_ready
+        scrn.blue_status = self.p2_ready
+        scrn.red_door = self.p1_door
+        scrn.blue_door = self.p2_door
+
+class DoorNotClosedMsg(IPCMessage):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.player = 0
+
+
+        if len(args) != 0:
+            if len(args) != 1:
+                raise ValueError("Incorrect number of argument.")
+            self.player = args[0]
+            return
+
+        if "player" in kwargs:
+            self.p1_ready = kwargs["p1_ready"]
+    def do_action(self, app, root):
+        scrn = app.root.get_screen('WaitForPlayersAndDoors')
+        if self.player == 1:
+            scrn.red_blink_door()
+        else:
+            scrn.blue_blink_door()
 
 MessageTypes = [ScreenChange, CountDown, DeclareWinner, RunDeathMatchMsg, RunSoccerMsg,
                 UpdateSoccerScore, RedScoredGoal, BlueScoredGoal, ResumeSoccer,
-                PauseSoccer]
+                PauseSoccer, PlayerReadyStatus, PlayerReadyWithDoorsStatus, DoorNotClosedMsg]
 TypesToCreate = { x.__name__: x for x in MessageTypes }
 
 class IPCMessageEncoder(json.JSONEncoder):

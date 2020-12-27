@@ -54,8 +54,7 @@ Media Screens:
 	RunSoccerScreen
 		- No sound with the exception of scoring a goal.
 		- When a goal is scored we may need a goal scored screen.
-		- Needs to track score
-		- Needs to display time
+
 
   Waiting for players and doors screen:
 		- Have something indicating that doors need to close.

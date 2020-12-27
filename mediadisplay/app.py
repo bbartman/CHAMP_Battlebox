@@ -384,6 +384,121 @@ class RunSoccerScreen(Screen):
         Animation.cancel_all(self)
         self.seconds = stopTime
 
+RedBG = [1, 0, 0, 1]
+GreenBG = [0, 1, 0, 1]
+YellowBG = [1, 1, 0, 1]
+
+class WaitForPlayers(Screen):
+    red_status = BooleanProperty(False)
+    blue_status = BooleanProperty(False)
+
+    red_bg_color = ListProperty(RedBG)
+    blue_bg_color = ListProperty(RedBG)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+    
+
+    def on_red_status(self, instance, value):
+        if value:
+            self.red_bg_color = GreenBG
+        else:
+            self.red_bg_color = RedBG
+
+    def on_blue_status(self, instance, value):
+        if value:
+            self.blue_bg_color = GreenBG
+        else:
+            self.blue_bg_color = RedBG
+
+class WaitForPlayersAndDoors(Screen):
+    red_status = BooleanProperty(False)
+    blue_status = BooleanProperty(False)
+    red_door = BooleanProperty(False)
+    blue_door = BooleanProperty(False)
+
+    red_bg_color = ListProperty(RedBG)
+    blue_bg_color = ListProperty(RedBG)
+    red_door_bg_color = ListProperty(RedBG)
+    blue_door_bg_color = ListProperty(RedBG)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.red_animation = None
+        self.blue_animation = None
+        
+    def switch_door_color(self, widget, color,*args):
+        widget.backgound_color = color
+
+    def on_leave(self):
+        Animation.cancel_all(self.ids.redDoor)
+        Animation.cancel_all(self.ids.blueDoor)
+
+    def red_blink_door(self):
+        w = self.ids.redDoor
+        Animation.cancel_all(w)
+        def getColor(val):
+            if (val % 2) == 1:
+                return RedBG
+            else:
+                return YellowBG
+        blinkTime = 0.3
+        for x in range(15):
+            if self.red_animation is None:
+                self.red_animation = Animation(duration=blinkTime)
+                self.red_animation.bind(on_start=partial(self.switch_door_color, w, getColor(x)))
+            else:
+                anim = Animation(duration=blinkTime)
+                anim.bind(on_start=partial(self.switch_door_color, w, getColor(x)))
+                self.red_animation += anim
+        self.red_animation.start(w)
+
+    def blue_blink_door(self):
+        w = self.ids.blueDoor
+        Animation.cancel_all(w)
+        def getColor(val):
+            if (val % 2) == 1:
+                return RedBG
+            else:
+                return YellowBG
+        blinkTime = 0.3
+        for x in range(15):
+            if self.blue_animation is None:
+                self.blue_animation = Animation(duration=blinkTime)
+                self.blue_animation.bind(on_start=partial(self.switch_door_color, w, getColor(x)))
+            else:
+                anim = Animation(duration=blinkTime)
+                anim.bind(on_start=partial(self.switch_door_color, w, getColor(x)))
+                self.blue_animation += anim
+        self.blue_animation.start(w)
+
+    def on_red_status(self, instance, value):
+        if value:
+            self.red_bg_color = GreenBG
+        else:
+            self.red_bg_color = RedBG
+
+    def on_blue_status(self, instance, value):
+        if value:
+            self.blue_bg_color = GreenBG
+        else:
+            self.blue_bg_color = RedBG
+
+    def on_red_door(self, instance, value):
+        Animation.cancel_all(self.ids.redDoor)
+        if value:
+            self.red_door_bg_color = GreenBG
+        else:
+            self.red_door_bg_color = RedBG
+
+    def on_blue_door(self, instance, value):
+        Animation.cancel_all(self.ids.blueDoor)
+        if value:
+            self.blue_door_bg_color = GreenBG
+        else:
+            self.blue_door_bg_color = RedBG
+
+    
 class MediaApp(App):
     def on_start(self):
         self.task = asyncio.create_task(connect_to_main_server(self.addr, self.on_received_cmd))

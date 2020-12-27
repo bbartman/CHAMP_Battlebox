@@ -153,6 +153,9 @@ class Arena(EventDispatcher):
             timeout=float(Config.get("arena", "arduino_time_out", fallback=0.5)),
             rtscts=True)
         self.arduino = ArduinoCommunicator(self.serial_arduino)
+        # TODO: Put a time out here so I can disable sending to and from the arduino.
+        # if it is broken or something else strange occurs.
+        # A minimal amount of time something like 3 seconds should be fine.
         while not self.arduino.is_ready:
             time.sleep(0.01)
 

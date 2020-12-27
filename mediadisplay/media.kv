@@ -154,21 +154,79 @@
             text:"Pick a winner!"
             font_size: 80
 
-<WaitForPlayers@Screen>
+<BackgroundColor@Widget>
+    background_color: 1, 1, 1, 1
+    canvas.before:
+        Color:
+            rgba: root.background_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+# Now you can simply Mix the `BackgroundColor` class with almost
+# any other widget... to give it a background.
+<BackgroundLabel@Label+BackgroundColor>
+    background_color: 0, 0, 0, 0
+    # Default the background color for this label
+    # to r 0, g 0, b 0, a 0
+
+<WaitForPlayers>
     name: 'WaitForPlayers'
+    id:wfp
     GridLayout:
         cols: 1
         Label:
-            text:"Wait for players"
+            size_hind: [1, .5]
+            text:"PlayersReady"
             font_size: 80
+        GridLayout:
+            size_hind: [1, .5]
+            cols:2
+            BackgroundLabel:
+                background_color: wfp.red_bg_color
+                id: redReady
+                text: "Red Ready?"
+                font_size: 30
+            BackgroundLabel:
+                background_color: wfp.blue_bg_color
+                id: blueReady
+                text: "Blue Ready?"
+                font_size: 30
 
-<WaitForPlayersAndDoors@Screen>
+
+
+<WaitForPlayersAndDoors>
     name: 'WaitForPlayersAndDoors'
+    id:wfp
     GridLayout:
         cols: 1
         Label:
             text:"Wait for players and doors"
             font_size: 80
+            size_hind: [1, .25]
+        GridLayout:
+            size_hind: [1, .75]
+            cols:2
+            BackgroundLabel:
+                background_color: wfp.red_bg_color
+                id: redReady
+                text: "Red Ready?"
+                font_size: 30
+            BackgroundLabel:
+                background_color: wfp.blue_bg_color
+                id: blueReady
+                text: "Blue Ready?"
+                font_size: 30
+            BackgroundLabel:
+                background_color: wfp.red_door_bg_color
+                id: redDoor
+                text: "Red Door Closed"
+                font_size: 30
+            BackgroundLabel:
+                background_color: wfp.blue_door_bg_color
+                id: blueDoor
+                text: "Blue Door Closed"
+                font_size: 30
+
 
 <VictoryScreen>
     name: 'VictoryScreen'
