@@ -30,7 +30,7 @@ import pymunk
 import pymunk.autogeometry
 from pymunk.vec2d import Vec2d
 from functools import partial
-
+from soundboard import SoundBoard
 
 # This makes sure we get the interprocess communication stuff
 # imported correctly.
@@ -64,7 +64,19 @@ class CDLabel(Label):
 
     def on_start_final(self, animation, widget):
         self.text = self.final_text
-        # self.color = [1,1,1,0]
+        if "GO" in self.final_text:
+            App.get_running_app().soundboard.aplay(App.get_running_app().soundboard.cd_go)
+        else:
+            App.get_running_app().soundboard.aplay(App.get_running_app().soundboard.cd_fight)
+
+    def play_sound(self, sound, anim, w):
+        App.get_running_app().soundboard.aplay(sound)
+
+    def _build_sound_anim(self, skewTime, sound):
+        sound_offset = skewTime - sound.length
+        S1 = Animation(duration=sound_offset)
+        S1.bind(on_complete=partial(self.play_sound, sound))
+        return S1
 
     def start_animation(self, tsSent, finalText):
         # Clearing any previous text.
@@ -73,18 +85,23 @@ class CDLabel(Label):
         self.color = [1, 1, 1, 0]
         # Converting current time into milliseconds offset from current tick.
         skew = 1.0 - ((int(round(time.time() * 1000)) - tsSent)/1000.0)
+        
         # Building complicated count down animation.
         A1 = Animation(color=[1,1,1,0.7], duration=skew) + Animation(color=[1,1,1,0], duration=0)
         A1.bind(on_start=self.on_start_3)
+        A1 &= self._build_sound_anim(skew, App.get_running_app().soundboard.cd_three)
 
         A2 = Animation(color=[1,1,1,0.7], duration=1.0)+ Animation(color=[1,1,1,0], duration=0)
         A2.bind(on_start=self.on_start_2)
+        A2 &= self._build_sound_anim(1.0, App.get_running_app().soundboard.cd_two)
         
         A3 = Animation(color=[1,1,1,0.7], duration=1.0) + Animation(color=[1,1,1,0], duration=0)
         A3.bind(on_start=self.on_start_1)
-        
+        A3 &= self._build_sound_anim(1.0, App.get_running_app().soundboard.cd_one)
+
         A4 = Animation(color=[1, 1, 1, 0.7], duration=0.3)
         A4.bind(on_start=self.on_start_final)
+
 
         self.anim = A1 + A2 + A3 + A4
         self.anim.start(self)
@@ -256,6 +273,7 @@ class RunDeathmatchScreen(Screen):
         if self.animation is not None:
             Animation.cancel_all(self)
             self.animation = None
+
     def switch_dd_screen(self, name, *args):
         self.ids.ddDisplay.current = name
         self.ids.ddDisplay.transition.direction = "left"
@@ -508,6 +526,7 @@ class WaitForPlayersAndDoors(Screen):
     
 class MediaApp(App):
     def on_start(self):
+        self.soundboard = SoundBoard()
         self.task = asyncio.create_task(connect_to_main_server(self.addr, self.on_received_cmd))
 
     def __init__(self, **kwargs):

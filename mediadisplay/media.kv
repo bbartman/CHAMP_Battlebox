@@ -35,6 +35,9 @@
 
 <DeathmatchScreen@Screen>:
     name: 'Deathmatch'
+    on_enter:
+        app.soundboard.aplay(app.soundboard.deathmatch_screen)
+        
     GridLayout:
         cols: 1
         Image:
