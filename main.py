@@ -657,10 +657,17 @@ class WaitForPlayersAndDoors(Screen):
     def on_player_1_pressed_ready_button(self, instance, value):
         if self.is_active and self.player_1_door_closed:
             self.player_1_ready_button_pressed()
+        else:
+            App.get_running_app().lights_player_1_needs_to_close_door(self.ids.player_1_door_label)
+            App.get_running_app().send_door_not_closed_cmd(1)
 
     def on_player_2_pressed_ready_button(self, instance, value):
         if self.is_active and self.player_2_door_closed:
             self.player_2_ready_button_pressed()
+        else:
+            App.get_running_app().lights_player_2_needs_to_close_door(self.ids.player_2_door_label)
+            App.get_running_app().send_door_not_closed_cmd(2)
+
 
     def on_player_1_closed_door(self, instance, value):
         if self.is_active:
@@ -722,13 +729,16 @@ class WaitForPlayersAndDoors(Screen):
     def player_1_ready_button_pressed(self):
         if self.player_1_door_closed:
             self.player_1_ready = True
-            App.get_running_app().send_player_ready_with_doors_status_cmd(
-                self.player_1_ready, self.player_2_ready,
-                self.player_1_door_closed, self.player_2_door_closed)
+        else:
+            App.get_running_app().lights_player_1_needs_to_close_door(self.ids.player_1_door_label)
+            App.get_running_app().send_door_not_closed_cmd(1)
 
     def player_2_ready_button_pressed(self):
         if self.player_2_door_closed:
             self.player_2_ready = True
+        else:
+            App.get_running_app().lights_player_2_needs_to_close_door(self.ids.player_2_door_label)
+            App.get_running_app().send_door_not_closed_cmd(2)
 
     def on_player_1_ready(self, instance, value):
         if value:
@@ -782,6 +792,9 @@ class WaitForPlayersAndDoors(Screen):
             self.ids.player_2_door_label.bg_color = RedBGColorList
             self.player_2_ready = False
             App.get_running_app().lights_player_2_door_opened()
+        App.get_running_app().send_player_ready_with_doors_status_cmd(
+            self.player_1_ready, self.player_2_ready,
+            self.player_1_door_closed, self.player_2_door_closed)
             
 
 
@@ -1155,12 +1168,12 @@ class MainApp(App):
 
     def send_player_ready_with_doors_status_cmd(self, p1_status, p2_status, p1_door, p2_door):
         Logger.info(f"MainApp: calling send send_player_ready_with_doors_status_cmd")
-        msg = RunDeathMatchMsg(p1_status, p2_status, p1_door, p2_door)
+        msg = PlayerReadyWithDoorsStatus(p1_status, p2_status, p1_door, p2_door)
         asyncio.create_task(self.server.send_to_all(msg.to_json()))
 
     def send_door_not_closed_cmd(self, playerIndex):
         Logger.info(f"MainApp: calling send send_door_not_closed_cmd")
-        msg = DoorNotClosedMsg(PlayerIndex)
+        msg = DoorNotClosedMsg(playerIndex)
         asyncio.create_task(self.server.send_to_all(msg.to_json()))
         
 

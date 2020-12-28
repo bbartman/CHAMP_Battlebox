@@ -10,7 +10,8 @@ from BattleBox.arena import Player
 from kivy.event import EventDispatcher
 from kivy.logger import Logger
 from arena.arduinocommunicator import ArduinoCommunicator
-
+from itertools import groupby
+from operator import itemgetter
 
 def parseLEDRanges(ledRanges):
     items = set()
@@ -42,7 +43,17 @@ def parseLEDRanges(ledRanges):
     ret = sorted([x for x in items])
     return ret
 
-
+def build_quick_send_led_range(ledsForPlayer):
+    if len(ledsForPlayer) == 0:
+        raise ValueError("Invalid LED range set, no LED's provided")
+    ret = []
+    for k, g in groupby(enumerate(ledsForPlayer), lambda ix : ix[0] - ix[1]):
+        temp = [x for x in map(itemgetter(1), g)]
+        if len(temp) == 0:
+            continue
+        ret.append((temp[0], temp[-1] - temp[0] + 1))
+    return ret                
+    
 class Arena(EventDispatcher):
     NO_NC_vars = { "NC":NormallyClosed, "NO": NormallyOpen}
     Pull_vars = { "UP":GPIO.PUD_UP, "DOWN": GPIO.PUD_DOWN, "OFF":GPIO.PUD_OFF}
@@ -93,13 +104,20 @@ class Arena(EventDispatcher):
                                              fallback=GPIO.PUD_DOWN)
 
         self.led_light_count = int(Config.get("arena", "led_light_count", fallback="43"))
+
         self.player_1_leds = parseLEDRanges(Config.get("arena", "player_1_leds"))
         self.player_2_leds = parseLEDRanges(Config.get("arena", "player_2_leds"))
+
         overlappingLEDs = set(self.player_1_leds) & set(self.player_2_leds)
         if len(overlappingLEDs) > 0:
             raise Exception("some lights have been assigned " +
                             "to both players {0}",
                             ",".join([str(x) for x in overlappingLEDs]))
+        # Building the fastest way to send single player led ranges without
+        # overloading the arduino and causing fragmented message errors, I hope.
+        self.player_1_led_ranges = build_quick_send_led_range(self.player_1_leds)
+        self.player_2_led_ranges = build_quick_send_led_range(self.player_2_leds)
+
         GPIO.setmode(GPIO.BCM)
 
         # Creating all of the different buttons and things we
@@ -232,15 +250,15 @@ class Arena(EventDispatcher):
         self.arduino.write_line("pixels.show")
 
     def led_player_1_lights(self, red, green, blue):
-        for x in self.player_1_leds:
-            self.arduino.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
-                                            int(x), int(red), int(blue), int(green)))
+        for x in self.player_1_led_ranges:
+            self.arduino.write_line("pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
+                                    int(red), int(blue), int(green), int(x[0]), int(x[1])))
         self.arduino.write_line("pixels.show")
 
     def led_player_2_lights(self, red, green, blue):
-        for x in self.player_2_leds:
-            self.arduino.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
-                                            int(x), int(red), int(blue), int(green)))
+        for x in self.player_2_led_ranges:
+            self.arduino.write_line("pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
+                                    int(red), int(blue), int(green), int(x[0]), int(x[1])))
         self.arduino.write_line("pixels.show")
 
     def led_brightness(self, brightness):

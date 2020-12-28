@@ -427,14 +427,18 @@ class WaitForPlayersAndDoors(Screen):
         self.red_animation = None
         self.blue_animation = None
         
-    def switch_door_color(self, widget, color,*args):
-        widget.backgound_color = color
+    def switch_red_door_color(self, color, *args):
+        self.red_door_bg_color = color
+
+    def switch_blue_door_color(self, color, *args):
+        self.blue_door_bg_color = color
 
     def on_leave(self):
         Animation.cancel_all(self.ids.redDoor)
         Animation.cancel_all(self.ids.blueDoor)
 
     def red_blink_door(self):
+        Logger.info("MainApp->WaitForPlayersAndDoors: Called red blink")
         w = self.ids.redDoor
         Animation.cancel_all(w)
         def getColor(val):
@@ -443,17 +447,19 @@ class WaitForPlayersAndDoors(Screen):
             else:
                 return YellowBG
         blinkTime = 0.3
-        for x in range(15):
-            if self.red_animation is None:
+        for x in range(6):
+            if x == 0:
                 self.red_animation = Animation(duration=blinkTime)
-                self.red_animation.bind(on_start=partial(self.switch_door_color, w, getColor(x)))
+                self.red_animation.bind(on_start=partial(self.switch_red_door_color, getColor(x)))
             else:
                 anim = Animation(duration=blinkTime)
-                anim.bind(on_start=partial(self.switch_door_color, w, getColor(x)))
+                anim.bind(on_start=partial(self.switch_red_door_color, getColor(x)))
                 self.red_animation += anim
+        self.red_animation.bind(on_complete=partial(self.switch_red_door_color, RedBG))
         self.red_animation.start(w)
 
     def blue_blink_door(self):
+        Logger.info("MainApp->WaitForPlayersAndDoors: Called blue blink")
         w = self.ids.blueDoor
         Animation.cancel_all(w)
         def getColor(val):
@@ -462,14 +468,15 @@ class WaitForPlayersAndDoors(Screen):
             else:
                 return YellowBG
         blinkTime = 0.3
-        for x in range(15):
+        for x in range(6):
             if self.blue_animation is None:
                 self.blue_animation = Animation(duration=blinkTime)
-                self.blue_animation.bind(on_start=partial(self.switch_door_color, w, getColor(x)))
+                self.blue_animation.bind(on_start=partial(self.switch_blue_door_color, getColor(x)))
             else:
                 anim = Animation(duration=blinkTime)
-                anim.bind(on_start=partial(self.switch_door_color, w, getColor(x)))
+                anim.bind(on_start=partial(self.switch_blue_door_color, getColor(x)))
                 self.blue_animation += anim
+        self.blue_animation.bind(on_complete=partial(self.switch_blue_door_color, RedBG))
         self.blue_animation.start(w)
 
     def on_red_status(self, instance, value):

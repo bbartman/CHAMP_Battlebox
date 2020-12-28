@@ -318,7 +318,6 @@ class DoorNotClosedMsg(IPCMessage):
         super().__init__()
         self.player = 0
 
-
         if len(args) != 0:
             if len(args) != 1:
                 raise ValueError("Incorrect number of argument.")
@@ -326,7 +325,8 @@ class DoorNotClosedMsg(IPCMessage):
             return
 
         if "player" in kwargs:
-            self.p1_ready = kwargs["p1_ready"]
+            self.player = kwargs["player"]
+
     def do_action(self, app, root):
         scrn = app.root.get_screen('WaitForPlayersAndDoors')
         if self.player == 1:
