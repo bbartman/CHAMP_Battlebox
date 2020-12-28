@@ -78,18 +78,18 @@ class CDLabel(Label):
         S1.bind(on_complete=partial(self.play_sound, sound))
         return S1
 
-    def start_animation(self, tsSent, finalText):
+    def start_animation(self, finalText, *args):
+        startTimeMs = int(round(time.time() * 1000))
         # Clearing any previous text.
         self.final_text = finalText
         self.text = ""
         self.color = [1, 1, 1, 0]
         # Converting current time into milliseconds offset from current tick.
-        skew = 1.0 - ((int(round(time.time() * 1000)) - tsSent)/1000.0)
         
         # Building complicated count down animation.
-        A1 = Animation(color=[1,1,1,0.7], duration=skew) + Animation(color=[1,1,1,0], duration=0)
+        A1 = Animation(color=[1,1,1,0.7], duration=1.0) + Animation(color=[1,1,1,0], duration=0)
         A1.bind(on_start=self.on_start_3)
-        A1 &= self._build_sound_anim(skew, App.get_running_app().soundboard.cd_three)
+        A1 &= self._build_sound_anim(1.0, App.get_running_app().soundboard.cd_three)
 
         A2 = Animation(color=[1,1,1,0.7], duration=1.0)+ Animation(color=[1,1,1,0], duration=0)
         A2.bind(on_start=self.on_start_2)
@@ -105,6 +105,8 @@ class CDLabel(Label):
 
         self.anim = A1 + A2 + A3 + A4
         self.anim.start(self)
+        endTimeMs = int(round(time.time() * 1000))
+        Logger.info(f"MediaApp->CountDown: time to build animation {endTimeMs - startTimeMs}")
 
     def cancel_animation(self):
         self.anim.cancel(self)
@@ -116,8 +118,15 @@ class CountDownScreen(Screen):
     def on_leave(self):
         self.stop_count_down()
 
-    def do_countdown(self, tsSent, finalText):
-        self.ids.counter.start_animation(tsSent, finalText)
+    def do_countdown(self, startTime, finalText):
+        clockStartTimeInMs = (startTime - int(round(time.time() * 1000)))
+        self.ids.counter.text = ""
+        Logger.info(f"MediaApp->CountDownScreen: Starting countdown in {clockStartTimeInMs/1000.0}")
+        Clock.schedule_once(
+            partial(self.ids.counter.start_animation, finalText),
+            clockStartTimeInMs/1000.0)
+        # skew = 1.0 - ((int(round(time.time() * 1000)) - tsSent)/1000.0)
+        # (tsSent, finalText)
 
     def stop_count_down(self):
         self.ids.counter.cancel_animation()

@@ -59,15 +59,23 @@ class CountDown(IPCMessage):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.final_text = ""
-        if len(args):
-            self.final_text = args[0]
+        self.start_time_stamp = 0
+        if len(args) != 0:
+            if len(args) != 2:
+                raise ValueError("Incorrect number of argument.")
+            self.start_time_stamp = args[0]
+            self.final_text = args[1]
             return
+
+        if "start_time_stamp" in kwargs:
+            self.start_time_stamp = kwargs["start_time_stamp"]
+
         if "final_text" in kwargs:
             self.final_text = kwargs["final_text"]
 
     def do_action(self, app, root):
         cds = app.root.get_screen('CountDownScreen')
-        cds.do_countdown(self.ts, self.final_text)
+        cds.do_countdown(self.start_time_stamp, self.final_text)
 
 class RunDeathMatchMsg(IPCMessage):
     def __init__(self, *args, **kwargs):
@@ -272,9 +280,9 @@ class PlayerReadyStatus(IPCMessage):
             self.p2_ready = kwargs["p2_ready"]
 
     def do_action(self, app, root):
-        raise Exception("PlayerReadyStatus Working on it")
-        # rdms = app.root.get_screen('RunSoccer')
-        # rdms.pause_time(self.stop_time)
+        wfp = app.root.get_screen('WaitForPlayers')
+        wfp.red_status = self.p1_ready
+        wfp.blue_status = self.p2_ready
 
 class PlayerReadyWithDoorsStatus(IPCMessage):
     def __init__(self, *args, **kwargs):

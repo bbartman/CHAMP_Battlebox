@@ -616,11 +616,15 @@ class WaitForPlayers(Screen):
     def on_player_1_ready(self, instance, value):
         if value:
             App.get_running_app().lights_player_1_ready()
+        App.get_running_app().send_player_ready_status_cmd(
+            self.player_1_ready, self.player_2_ready)
         self.checkForReadyState()
 
     def on_player_2_ready(self, instance, value):
         if value:
             App.get_running_app().lights_player_2_ready()
+        App.get_running_app().send_player_ready_status_cmd(
+            self.player_1_ready, self.player_2_ready)
         self.checkForReadyState()
 
 class BGDoorLabel(Label):
@@ -1022,7 +1026,7 @@ class FadeTicker(Label):
     def complete_count_down(self, animation, Ticker):
         self.dispatch("on_ready")
 
-    def _do_animation(self, nextValue, nextCB):
+    def _do_animation(self, nextValue, nextCB, *args):
         self.led_brightness = 10
         self.seconds = nextValue
         self.color = [1,1,1,0]
@@ -1035,8 +1039,9 @@ class FadeTicker(Label):
     def start(self):
         Animation.cancel_all(self)
         App.get_running_app().arena.led_brightness_and_fill(10, *STOP_LIGHT_RED)
-        App.get_running_app().send_countdown_cmd(self.final_word)
-        self._do_animation(3, self.finish_callback_3)
+        match_start_time = round(time.time() * 1000) + 1000
+        App.get_running_app().send_countdown_cmd(match_start_time, self.final_word)
+        Clock.schedule_once(partial(self._do_animation, 3, self.finish_callback_3), 1.45)
 
     def on_seconds(self, instance, value):
         self.text = str(int(self.seconds))
@@ -1150,9 +1155,9 @@ class MainApp(App):
         msg = DeclareWinner(Name)
         asyncio.create_task(self.server.send_to_all(msg.to_json()))
 
-    def send_countdown_cmd(self, finalWord):
+    def send_countdown_cmd(self, startTime, finalWord):
         Logger.info(f"MainApp: calling send_countdown_cmd with text {finalWord}")
-        msg = CountDown(finalWord)
+        msg = CountDown(startTime, finalWord)
         asyncio.create_task(self.server.send_to_all(msg.to_json()))
 
     def send_run_deathmatch_cmd(self, startTime, duration, willDropDoors, dd_cd_startTime, dd_cd_endTime):
