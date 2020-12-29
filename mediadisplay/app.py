@@ -55,11 +55,9 @@ class CDLabel(Label):
         self.text = "3"
 
     def on_start_2(self, animation, widget):
-        # self.color = [1,1,1,0]
         self.text = "2"
 
     def on_start_1(self, animation, widget):
-        # self.color = [1,1,1,0]
         self.text = "1"
 
     def on_start_final(self, animation, widget):

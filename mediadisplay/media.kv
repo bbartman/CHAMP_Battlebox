@@ -89,11 +89,13 @@
                         font_size: 40
 <SoccerScreen@Screen>:
     name: 'Soccer'
+    on_enter:
+        app.soundboard.aplay(app.soundboard.soccer_screen)
     GridLayout:
         cols: 1
-        Label:
-            text:"Soccer"
-            font_size: 80
+        Image:
+            source:"media/SoccerLogo.PNG"
+            allow_stretch: True
 
 <RunSoccerScreen>
     name: "RunSoccer"

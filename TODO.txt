@@ -1,6 +1,3 @@
-Documentation Links
-	A. RPi.GPIO
-
 Arena TODOS:
 Soccer Screen:
 	1. Lights for game paused.
@@ -11,82 +8,16 @@ WaitingForPlayerAndDoors Screen:
 		- Create a special fill pattern based off of the pattern that is given through
 			the configuration file. This will allow for faster communication.
 
-	2. Lights for waiting for players to press ready.
-
 	3. Lights for doors not closed when player presses ready.
-
-	4. Doors - lights Make sure to change lights when if the door needs to be closed before
-		   the match can begin and they are not closed.
+		- Blinking lights
 
 	5. Fix the text for when a player closes a door.
 		- This needs to say door closed and have the text color changed to black instead of white.
-General:
-	Make sure that names entered are transfered to the victory screens correctly.
-		- Just need to verify this, it should already be working (I think).
-
-Media Requirements inside of Main apps:
-	1. A configuration for using unix domain sockets for communicating between main and media
-		apps.
-	2. Figure out how to handle communication messages.
-	3. May need to switch to AsyncIO event loop for both apps.
-
-Options/nice to haves:
-	1. (Optional) Create a special button on main screen to allow people to open/close the doors?
-	2. (Optional) Lights for idle.
-		A. Turning off lights for idle.
 
 
 Media Screens:
-
-	Configuring deathmatch screen:
-		Sound - "Deathmatch"
-
-	Configure Soccer Screen:
-		- Working on image.
-		Sound - "Blood sports ball"
-			1. "Soccer"
-			2. "GO"
-
-	RunDeathmatchScreen
-		- Needs to display time,
-		-	as well as the door drop time information.
-
-	RunSoccerScreen
-		- No sound with the exception of scoring a goal.
-		- When a goal is scored we may need a goal scored screen.
-
-
-  Waiting for players and doors screen:
-		- Have something indicating that doors need to close.
-		- Have something indicating door status.
-		Sounds
-				- Maybe a buzzer noise for if the player pushes the button without
-				the door closed?
-				- Cocking a gun noise for door closed? Some kind of metalic ca-ching noise would be fine
-					Followed by a bing sound.
-					- Suggestions for metalic noises
-						1. Lock closing shackle
-						2. Cocking a gun
-						3. Dropping a metal on a another piece of metal
-				- A Polite bing noise indicating that a player is ready.
-				- buzzer noise if we exit configuration.
-
-
-
-
-	Count down screen:
-		Sounds "3"
-					 "2"
-					 "1"
-					 "GO" - I'm not else what to put for soccer?
-					 "FIGHT" - death match
-
-	
-
-	Victory Screen:
-		Sounds
-			This needs a kazoo noise.
-	
-	MatchOver - Match over and no winner selected yet:
-		Sound
-			- It would be really funny to put the jeopardy thinking theme music here.
+	Sounds
+		- Horn/Bell - something to signal the end of a match.
+		- Need a door needs closed sound.
+		- Door drop count down noise?
+		- This needs a kazoo noise.
