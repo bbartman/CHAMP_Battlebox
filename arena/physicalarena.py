@@ -3,7 +3,8 @@ from kivy.config import Config
 from arena.pins import getPin
 from RPi import GPIO
 from kivy.clock import Clock, mainthread
-from arena.L298N import L298NMotor
+#from arena.L298N import L298NMotor
+from arena.relaymotorcontroller import RelayMotorController
 from arena.button import PhysicalButton
 from arena import NormallyClosed, NormallyOpen
 from BattleBox.arena import Player
@@ -61,10 +62,10 @@ class Arena(EventDispatcher):
     player_2 = Player(name = "Player2")
     def __init__(self, **kwargs):
         super(Arena, self).__init__(**kwargs)
-        self.motor_enable_1 = getPin(Config.get("arena", "motor_enable_1_pin"))
+        #self.motor_enable_1 = getPin(Config.get("arena", "motor_enable_1_pin"))
         self.motor_in_1 = getPin(Config.get("arena", "motor_in_1_pin"))
         self.motor_in_2 = getPin(Config.get("arena", "motor_in_2_pin"))
-        self.motor_enable_2 = getPin(Config.get("arena", "motor_enable_2_pin"))
+        #self.motor_enable_2 = getPin(Config.get("arena", "motor_enable_2_pin"))
         self.motor_in_3 = getPin(Config.get("arena", "motor_in_3_pin"))
         self.motor_in_4 = getPin(Config.get("arena", "motor_in_4_pin"))
         self.motor_1_dir = Config.get("arena", "player_1_door_motor_direction",
@@ -122,16 +123,13 @@ class Arena(EventDispatcher):
 
         # Creating all of the different buttons and things we
         # will need to interact with the system.
-        self.player_1_motor = L298NMotor(self.motor_enable_1.gpio_number,
-                                         self.motor_in_1.gpio_number,
-                                         self.motor_in_2.gpio_number,
-                                         self.motor_1_dir)
+        self.player_1_motor = RelayMotorController(self.motor_in_1.gpio_number,
+            self.motor_in_2.gpio_number, self.motor_1_dir)
 
         # Second half of the motor controller.
-        self.player_2_motor = L298NMotor(self.motor_enable_2.gpio_number,
-                                         self.motor_in_3.gpio_number,
-                                         self.motor_in_4.gpio_number,
-                                         self.motor_2_dir)
+        self.player_2_motor = RelayMotorController(self.motor_in_3.gpio_number,
+            self.motor_in_4.gpio_number, self.motor_2_dir)
+
 
         self.player_1_ready_button = PhysicalButton(self.player_1_ready_pin,
                                                     self.player_1_ready_button_wiring,
