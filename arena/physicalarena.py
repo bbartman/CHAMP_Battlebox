@@ -227,17 +227,17 @@ class Arena(EventDispatcher):
 
     def set_led(self, index, red, green, blue):
         self.arduino.write_line("pixels.setPixelColor, {0}, {1}, {2}, {3}".format(
-            int(index), int(red), int(blue), int(green) ))
+            int(index), int(green), int(red), int(blue) ))
         self.arduino.write_line("pixels.show")
 
     def led_fill(self, red, green, blue):
         self.arduino.write_line("pixels.fill, {0}, {1}, {2}, 0".format(
-            int(red), int(blue), int(green) ))
+            int(green), int(red), int(blue) ))
         self.arduino.write_line("pixels.show")
 
     def led_brightness_and_fill(self, brightness, red, green, blue):
         self.arduino.write_line("pixels.fill, {0}, {1}, {2}, 0".format(
-            int(red), int(blue), int(green) ))
+            int(green), int(red), int(blue) ))
         self.arduino.write_line("pixels.setBrightness, {0}".format( int(brightness) ))
         self.arduino.write_line("pixels.show")
 
@@ -245,20 +245,20 @@ class Arena(EventDispatcher):
         if count <= -1:
             count = self.led_light_count
         cmd = "pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
-            int(red), int(blue), int(green), int(start), int(count) )
+            int(green), int(red), int(blue), int(start), int(count) )
         self.arduino.write_line(cmd)
         self.arduino.write_line("pixels.show")
 
     def led_player_1_lights(self, red, green, blue):
         for x in self.player_1_led_ranges:
             self.arduino.write_line("pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
-                                    int(red), int(blue), int(green), int(x[0]), int(x[1])))
+                                    int(green), int(red), int(blue), int(x[0]), int(x[1])))
         self.arduino.write_line("pixels.show")
 
     def led_player_2_lights(self, red, green, blue):
         for x in self.player_2_led_ranges:
             self.arduino.write_line("pixels.fill, {0}, {1}, {2}, {3}, {4}".format(
-                                    int(red), int(blue), int(green), int(x[0]), int(x[1])))
+                                    int(green), int(red), int(blue), int(x[0]), int(x[1])))
         self.arduino.write_line("pixels.show")
 
     def led_brightness(self, brightness):
@@ -270,19 +270,19 @@ class Arena(EventDispatcher):
         return self.led_light_count
 
     def close_player_1_door(self):
-        self.player_1_motor.goForward(50)
+        self.player_1_motor.goForward(10)
 
     def open_player_1_door(self):
-        self.player_1_motor.goBackward(50)
+        self.player_1_motor.goBackward(10)
 
     def stop_player_1_door(self):
         self.player_1_motor.stop()
         
     def close_player_2_door(self):
-        self.player_2_motor.goForward(50)
+        self.player_2_motor.goForward(10)
 
     def open_player_2_door(self):
-        self.player_2_motor.goBackward(50)
+        self.player_2_motor.goBackward(10)
 
     def stop_player_2_door(self):
         self.player_2_motor.stop()

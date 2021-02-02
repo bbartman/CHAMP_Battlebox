@@ -13,7 +13,7 @@ using Color = uint32_t;
 // But for whatever reason the physical light color doesn't match up with the
 // library colors.
 void setup() {
-  Pixels = new Adafruit_NeoPixel(PixelCount, LightPin, NEO_RBG + NEO_KHZ800);
+  Pixels = new Adafruit_NeoPixel(PixelCount, LightPin, NEO_GRB + NEO_KHZ800);
   Serial.begin(115200);
   Pixels->begin();
   Serial.println("ready");

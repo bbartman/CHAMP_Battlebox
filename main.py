@@ -33,7 +33,7 @@ random.seed(datetime.now())
 
 # Coloring = Red->Green->Blue
 RED = (255, 0, 0)
-MATCH_COUNT_DOWN_RED = (218, 83, 10)
+MATCH_COUNT_DOWN_RED = RED
 YELLOW = (255, 255, 0)
 DD_YELLOW = (200, 255, 0)
 GREEN = (0, 255, 0)
@@ -246,7 +246,6 @@ class RunDeathmatchScreen(Screen):
         self.match_olver_color = MATCH_COUNT_DOWN_RED
 
     def _do_reset(self, app, root, deltaTime):
-        
         self.ids.countDownClock.start(self.dmData.duration)
         Logger.info("MainApp->RunDeathMatchScreen->_do_reset: Completed screen reset")
         return False
@@ -267,8 +266,8 @@ class RunDeathmatchScreen(Screen):
             self.will_drop_doors = False
         elif self.dmData.door_drop == 'Doors Always Open':
             self.will_drop_doors = False
-            App.get_running_app().open_player_1_door(1)
-            App.get_running_app().open_player_2_door(1)
+            App.get_running_app().open_player_1_door(.1)
+            App.get_running_app().open_player_2_door(.1)
         elif self.dmData.door_drop == 'Drop Player 1 Door Only':
             self.will_drop_doors = True
         elif self.dmData.door_drop == 'Drop Player 2 Door Only':
@@ -323,6 +322,7 @@ class RunDeathmatchScreen(Screen):
 
     def on_dd_complete(self, animation, value):
         App.get_running_app().do_door_drop()
+        App.get_running_app().arena.led_brightness_and_fill(255, 255, 255, 255)
 
     def on_cd_lights_on(self, instance, value):
         if self.prevTick == -1:
@@ -446,8 +446,8 @@ class RunSoccerScreen(Screen):
         super(RunSoccerScreen, self).__init__(**kwargs)
 
     def on_pre_enter(self):
-        App.get_running_app().open_player_1_door(1)
-        App.get_running_app().open_player_2_door(1)
+        App.get_running_app().open_player_1_door(.1)
+        App.get_running_app().open_player_2_door(.1)
 
 
     def on_data(self, instance, value):
@@ -677,17 +677,17 @@ class WaitForPlayersAndDoors(Screen):
         if self.is_active:
             self.player_1_door_closed = value
             if self.player_1_door_closed:
-                App.get_running_app().close_player_1_door(1)
+                App.get_running_app().close_player_1_door(.1)
             else:
-                App.get_running_app().open_player_1_door(1)
+                App.get_running_app().open_player_1_door(.1)
 
     def on_player_2_closed_door(self, instance, value):
         if self.is_active:
             self.player_2_door_closed = value
             if self.player_2_door_closed:
-                App.get_running_app().close_player_2_door(1)
+                App.get_running_app().close_player_2_door(.1)
             else:
-                App.get_running_app().open_player_2_door(1)
+                App.get_running_app().open_player_2_door(.1)
 
     def reset_screen(self, nextScreen, POrT, previousScreen, word):
         self.next_screen_after_ready = nextScreen
@@ -1025,6 +1025,7 @@ class FadeTicker(Label):
 
     def complete_count_down(self, animation, Ticker):
         self.dispatch("on_ready")
+        App.get_running_app().arena.led_brightness_and_fill(255, 255, 255, 255)
 
     def _do_animation(self, nextValue, nextCB, *args):
         self.led_brightness = 10
@@ -1304,11 +1305,11 @@ class MainApp(App):
 
     def close_player_1_door(self):
         self.arena.close_player_1_door()
-        Clock.schedule_once(self.door_stopper_p1, 1)
+        Clock.schedule_once(self.door_stopper_p1, 0.1)
 
     def close_player_2_door(self):
         self.arena.close_player_2_door()
-        Clock.schedule_once(self.door_stopper_p2, 1)
+        Clock.schedule_once(self.door_stopper_p2, 0.1)
 
     def open_player_1_door(self, duration):
         self.arena.open_player_1_door()
@@ -1334,21 +1335,21 @@ class MainApp(App):
     #
     def do_door_drop(self):
         if self.data.death_match.door_drop == 'Drop Both':
-            self.open_player_1_door(1)
-            self.open_player_2_door(1)
+            self.open_player_1_door(0.1)
+            self.open_player_2_door(0.1)
         elif self.data.death_match.door_drop == 'Never drop doors':
             pass
         elif self.data.death_match.door_drop == 'Doors Always Open':
             pass
         elif self.data.death_match.door_drop == 'Drop Player 1 Door Only':
-            self.open_player_1_door(1)
+            self.open_player_1_door(0.1)
         elif self.data.death_match.door_drop == 'Drop Player 2 Door Only':
-            self.open_player_2_door(1)
+            self.open_player_2_door(0.1)
         elif self.data.death_match.door_drop == 'Drop Random Door':
             if (random.randint() % 2) == 1:
-                self.open_player_1_door(1)
+                self.open_player_1_door(0.1)
             else:
-                self.open_player_2_door(1)
+                self.open_player_2_door(0.1)
 
 
 
