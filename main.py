@@ -266,8 +266,8 @@ class RunDeathmatchScreen(Screen):
             self.will_drop_doors = False
         elif self.dmData.door_drop == 'Doors Always Open':
             self.will_drop_doors = False
-            App.get_running_app().open_player_1_door(.1)
-            App.get_running_app().open_player_2_door(.1)
+            App.get_running_app().open_player_1_door(3)
+            App.get_running_app().open_player_2_door(3)
         elif self.dmData.door_drop == 'Drop Player 1 Door Only':
             self.will_drop_doors = True
         elif self.dmData.door_drop == 'Drop Player 2 Door Only':
@@ -446,8 +446,8 @@ class RunSoccerScreen(Screen):
         super(RunSoccerScreen, self).__init__(**kwargs)
 
     def on_pre_enter(self):
-        App.get_running_app().open_player_1_door(.1)
-        App.get_running_app().open_player_2_door(.1)
+        App.get_running_app().open_player_1_door(3)
+        App.get_running_app().open_player_2_door(3)
 
 
     def on_data(self, instance, value):
@@ -677,17 +677,17 @@ class WaitForPlayersAndDoors(Screen):
         if self.is_active:
             self.player_1_door_closed = value
             if self.player_1_door_closed:
-                App.get_running_app().close_player_1_door(.1)
+                App.get_running_app().close_player_1_door(3)
             else:
-                App.get_running_app().open_player_1_door(.1)
+                App.get_running_app().open_player_1_door(3)
 
     def on_player_2_closed_door(self, instance, value):
         if self.is_active:
             self.player_2_door_closed = value
             if self.player_2_door_closed:
-                App.get_running_app().close_player_2_door(.1)
+                App.get_running_app().close_player_2_door(3)
             else:
-                App.get_running_app().open_player_2_door(.1)
+                App.get_running_app().open_player_2_door(3)
 
     def reset_screen(self, nextScreen, POrT, previousScreen, word):
         self.next_screen_after_ready = nextScreen
@@ -707,10 +707,10 @@ class WaitForPlayersAndDoors(Screen):
         self.on_player_1_door_closed(None, self.player_1_door_closed)
         self.on_player_2_door_closed(None, self.player_2_door_closed)
         if self.player_1_door_closed:
-            App.get_running_app().close_player_1_door(1)
+            App.get_running_app().close_player_1_door(3)
 
         if self.player_2_door_closed:
-            App.get_running_app().close_player_2_door(1)
+            App.get_running_app().close_player_2_door(3)
 
     def TriggerLateScreenChange(self, Key, *largs):
         self.dispatch("on_everyone_ready")
@@ -1305,11 +1305,11 @@ class MainApp(App):
 
     def close_player_1_door(self):
         self.arena.close_player_1_door()
-        Clock.schedule_once(self.door_stopper_p1, 0.1)
+        Clock.schedule_once(self.door_stopper_p1, 3)
 
     def close_player_2_door(self):
         self.arena.close_player_2_door()
-        Clock.schedule_once(self.door_stopper_p2, 0.1)
+        Clock.schedule_once(self.door_stopper_p2, 3)
 
     def open_player_1_door(self, duration):
         self.arena.open_player_1_door()
@@ -1335,21 +1335,21 @@ class MainApp(App):
     #
     def do_door_drop(self):
         if self.data.death_match.door_drop == 'Drop Both':
-            self.open_player_1_door(0.1)
-            self.open_player_2_door(0.1)
+            self.open_player_1_door(3)
+            self.open_player_2_door(3)
         elif self.data.death_match.door_drop == 'Never drop doors':
             pass
         elif self.data.death_match.door_drop == 'Doors Always Open':
             pass
         elif self.data.death_match.door_drop == 'Drop Player 1 Door Only':
-            self.open_player_1_door(0.1)
+            self.open_player_1_door(3)
         elif self.data.death_match.door_drop == 'Drop Player 2 Door Only':
-            self.open_player_2_door(0.1)
+            self.open_player_2_door(3)
         elif self.data.death_match.door_drop == 'Drop Random Door':
             if (random.randint() % 2) == 1:
-                self.open_player_1_door(0.1)
+                self.open_player_1_door(3)
             else:
-                self.open_player_2_door(0.1)
+                self.open_player_2_door(3)
 
 
 
