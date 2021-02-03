@@ -63,11 +63,11 @@ class Arena(EventDispatcher):
     def __init__(self, **kwargs):
         super(Arena, self).__init__(**kwargs)
         #self.motor_enable_1 = getPin(Config.get("arena", "motor_enable_1_pin"))
-        self.motor_in_1 = getPin(Config.get("arena", "motor_in_1_pin"))
-        self.motor_in_2 = getPin(Config.get("arena", "motor_in_2_pin"))
+        #self.motor_in_1 = getPin(Config.get("arena", "motor_in_1_pin"))
+        #self.motor_in_2 = getPin(Config.get("arena", "motor_in_2_pin"))
         #self.motor_enable_2 = getPin(Config.get("arena", "motor_enable_2_pin"))
-        self.motor_in_3 = getPin(Config.get("arena", "motor_in_3_pin"))
-        self.motor_in_4 = getPin(Config.get("arena", "motor_in_4_pin"))
+        #self.motor_in_3 = getPin(Config.get("arena", "motor_in_3_pin"))
+        #self.motor_in_4 = getPin(Config.get("arena", "motor_in_4_pin"))
         self.motor_1_dir = Config.get("arena", "player_1_door_motor_direction",
                                       vars={ "forward": 0, "backward": 1 },
                                       fallback=0)
@@ -123,12 +123,12 @@ class Arena(EventDispatcher):
 
         # Creating all of the different buttons and things we
         # will need to interact with the system.
-        self.player_1_motor = RelayMotorController(self.motor_in_1.gpio_number,
-            self.motor_in_2.gpio_number, self.motor_1_dir)
+        #self.player_1_motor = RelayMotorController(self.motor_in_1.gpio_number,
+        #    self.motor_in_2.gpio_number, self.motor_1_dir)
 
         # Second half of the motor controller.
-        self.player_2_motor = RelayMotorController(self.motor_in_3.gpio_number,
-            self.motor_in_4.gpio_number, self.motor_2_dir)
+        #self.player_2_motor = RelayMotorController(self.motor_in_3.gpio_number,
+        #    self.motor_in_4.gpio_number, self.motor_2_dir)
 
 
         self.player_1_ready_button = PhysicalButton(self.player_1_ready_pin,
@@ -268,19 +268,32 @@ class Arena(EventDispatcher):
         return self.led_light_count
 
     def close_player_1_door(self):
-        self.player_1_motor.goForward(10)
+        if self.motor_1_dir == 0:
+            self.arduino.write_line("m1.open")
+        else:
+            self.arduino.write_line("m1.close")
 
     def open_player_1_door(self):
-        self.player_1_motor.goBackward(10)
-
+        if self.motor_1_dir == 0:
+            self.arduino.write_line("m1.close")
+        else:
+            self.arduino.write_line("m1.open")
+        
     def stop_player_1_door(self):
-        self.player_1_motor.stop()
+        self.arduino.write_line("m1.off")
         
     def close_player_2_door(self):
-        self.player_2_motor.goForward(10)
-
+        if self.motor_2_dir == 0:
+            self.arduino.write_line("m2.open")
+        else:
+            self.arduino.write_line("m2.close")
+        
     def open_player_2_door(self):
-        self.player_2_motor.goBackward(10)
-
+        if self.motor_2_dir == 0:
+            self.arduino.write_line("m2.close")
+        else:
+            self.arduino.write_line("m2.open")
+        
     def stop_player_2_door(self):
-        self.player_2_motor.stop()
+        self.arduino.write_line("m2.off")
+        
