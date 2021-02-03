@@ -4,9 +4,64 @@
 
 // Giving some default values here.
 const int LightPin = 3;
+
+// Motor controlling pins
+const int M1_1_Pin = 4;
+const int M1_2_Pin = 5;
+const int M2_1_Pin = 6;
+const int M2_2_Pin = 7;
+
+struct RelayMotorController {
+  int relay1 = 0;
+  int relay2 = 0;
+
+  RelayMotorController(int pin1, int pin2)
+    :relay1(pin1), relay2(pin2)
+  {
+    if (relay1 >= 0) {
+      pinMode(relay1, OUTPUT);
+      digitalWrite(relay1, LOW);
+    }
+    if (relay2 >= 0) {
+      pinMode(relay2, OUTPUT);
+      digitalWrite(relay2, LOW);
+    }
+  }
+
+  ~RelayMotorController() {
+    if (relay1 >= 0)
+      pinMode(relay1, INPUT);
+    if (relay2 >= 0)
+      pinMode(relay2, INPUT);
+  }
+
+  void forward() {
+    digitalWrite(relay1, HIGH);
+    digitalWrite(relay2, LOW);
+  }
+
+  void backward() {
+    digitalWrite(relay1, LOW);
+    digitalWrite(relay2, HIGH);
+  }
+
+  void off() {
+    digitalWrite(relay1, LOW);
+    digitalWrite(relay2, LOW);
+  }
+};
+
+// Gloabls
 size_t PixelCount = 3;
 Adafruit_NeoPixel *Pixels = nullptr;
+RelayMotorController* M1 = nullptr;
+RelayMotorController* M2 = nullptr;
+
+// Types
 using Color = uint32_t;
+
+
+
 
 // Actual physical color configuration
 // Blue->Green->Red
@@ -14,6 +69,8 @@ using Color = uint32_t;
 // library colors.
 void setup() {
   Pixels = new Adafruit_NeoPixel(PixelCount, LightPin, NEO_GRB + NEO_KHZ800);
+  M1 = new RelayMotorController(M1_1_Pin, M1_2_Pin);
+  M2 = new RelayMotorController(M2_1_Pin, M2_2_Pin);
   Serial.begin(115200);
   Pixels->begin();
   Serial.println("ready");
@@ -40,6 +97,12 @@ const char *pixels_setBrightness = "pixels.setBrightness";
 const char *pixels_getBrightness = "pixels.getBrightness";
 const char *pixels_getPin = "pixels.getPin";
 const char *pixels_size = "pixels.size";
+const char *motor1_open = "m1.open";
+const char *motor1_close = "m1.close";
+const char *motor1_off = "m1.off";
+const char *motor2_open = "m2.open";
+const char *motor2_close = "m2.close";
+const char *motor2_off = "m2.off";
 
 // const char *pixels_getPixelColor = "pixels.getPixelColor";
 // const char pixels_setPin = "pixels.setPin";
@@ -54,7 +117,13 @@ enum {
   cmd_pixels_setBrightness,
   cmd_pixels_getBrightness,
   cmd_pixels_getPin,
-  cmd_pixels_size
+  cmd_pixels_size,
+  cmd_open_door_1,
+  cmd_close_door_1,
+  cmd_off_door_1,
+  cmd_open_door_2,
+  cmd_close_door_2,
+  cmd_off_door_2,
 };
 
 int parsedCmd = -1;
@@ -182,6 +251,18 @@ int decodeCommand() {
     return cmd_pixels_getPin;
   } else if(Command == pixels_size) {
     return cmd_pixels_size;
+  } else if (Command == motor1_open) {
+    return cmd_open_door_1;
+  } else if (Command == motor1_close) {
+    return cmd_close_door_1;
+  } else if (Command == motor2_open) {
+    return cmd_open_door_2;
+  } else if (Command == motor2_close) {
+    return cmd_close_door_2;
+  } else if (Command == motor1_off) {
+    return cmd_off_door_1;
+  } else if (Command == motor2_off) {
+    return cmd_off_door_2;
   } else
     return -1;
 }
@@ -236,7 +317,7 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(2, ArgCount);
       break;
     }
-    if (Pixels){
+    if (Pixels) {
       delete Pixels;
     }
     Pixels = new Adafruit_NeoPixel(Args[0], Args[1], NEO_GRB + NEO_KHZ800);;
@@ -350,6 +431,59 @@ void processCommand(int Cmd) {
     Serial.println(Pixels->numPixels());
     break;
 
+  case cmd_open_door_1:
+    if (ArgCount != 0) {
+      printIncorrectNumberOfArgumentsError(0, ArgCount);
+      break;
+    }
+    M1->forward();
+    Serial.println("OK");
+    break;
+
+  case cmd_close_door_1:
+    if (ArgCount != 0) {
+      printIncorrectNumberOfArgumentsError(0, ArgCount);
+      break;
+    }
+    M1->backward();
+    Serial.println("OK");
+    break;
+
+  case cmd_open_door_2:
+    if (ArgCount != 0) {
+      printIncorrectNumberOfArgumentsError(0, ArgCount);
+      break;
+    }
+    M2->forward();
+    Serial.println("OK");
+    break;
+
+  case cmd_close_door_2:
+    if (ArgCount != 0) {
+      printIncorrectNumberOfArgumentsError(0, ArgCount);
+      break;
+    }
+    M2->backward();
+    Serial.println("OK");
+    break;
+
+  case cmd_off_door_1:
+    if (ArgCount != 0) {
+      printIncorrectNumberOfArgumentsError(0, ArgCount);
+      break;
+    }
+    M1->off();
+    Serial.println("OK");
+    break;
+
+  case cmd_off_door_2:
+    if (ArgCount != 0) {
+      printIncorrectNumberOfArgumentsError(0, ArgCount);
+      break;
+    }
+    M2->off();
+    Serial.println("OK");
+    break;
   default:
     Serial.println("ERR: unknown command " + Command);
     break;
