@@ -18,6 +18,10 @@ struct RelayMotorController {
   RelayMotorController(int pin1, int pin2)
     :relay1(pin1), relay2(pin2)
   {
+
+  }
+
+  void setup() {
     if (relay1 >= 0) {
       pinMode(relay1, OUTPUT);
       digitalWrite(relay1, LOW);
@@ -27,12 +31,11 @@ struct RelayMotorController {
       digitalWrite(relay2, LOW);
     }
   }
-
   ~RelayMotorController() {
-    if (relay1 >= 0)
-      pinMode(relay1, INPUT);
-    if (relay2 >= 0)
-      pinMode(relay2, INPUT);
+    //if (relay1 >= 0)
+    //  pinMode(relay1, INPUT);
+    //if (relay2 >= 0)
+    //  pinMode(relay2, INPUT);
   }
 
   void forward() {
@@ -54,8 +57,8 @@ struct RelayMotorController {
 // Gloabls
 size_t PixelCount = 3;
 Adafruit_NeoPixel *Pixels = nullptr;
-RelayMotorController* M1 = nullptr;
-RelayMotorController* M2 = nullptr;
+RelayMotorController M1(M1_1_Pin, M1_2_Pin);
+RelayMotorController M2(M2_1_Pin, M2_2_Pin);
 
 // Types
 using Color = uint32_t;
@@ -69,8 +72,8 @@ using Color = uint32_t;
 // library colors.
 void setup() {
   Pixels = new Adafruit_NeoPixel(PixelCount, LightPin, NEO_GRB + NEO_KHZ800);
-  M1 = new RelayMotorController(M1_1_Pin, M1_2_Pin);
-  M2 = new RelayMotorController(M2_1_Pin, M2_2_Pin);
+  M1.setup();
+  M2.setup();
   Serial.begin(115200);
   Pixels->begin();
   Serial.println("ready");
@@ -436,7 +439,7 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
       break;
     }
-    M1->forward();
+    M1.forward();
     Serial.println("OK");
     break;
 
@@ -445,7 +448,7 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
       break;
     }
-    M1->backward();
+    M1.backward();
     Serial.println("OK");
     break;
 
@@ -454,7 +457,7 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
       break;
     }
-    M2->forward();
+    M2.forward();
     Serial.println("OK");
     break;
 
@@ -463,7 +466,7 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
       break;
     }
-    M2->backward();
+    M2.backward();
     Serial.println("OK");
     break;
 
@@ -472,7 +475,7 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
       break;
     }
-    M1->off();
+    M1.off();
     Serial.println("OK");
     break;
 
@@ -481,7 +484,7 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
       break;
     }
-    M2->off();
+    M2.off();
     Serial.println("OK");
     break;
   default:
