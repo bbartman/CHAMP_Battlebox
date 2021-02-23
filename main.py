@@ -1225,34 +1225,42 @@ class MainApp(App):
 
     #
     def lights_off(self):
+        Logger.info("MainApp: Lights off cmd sent")
         self.arena.led_brightness_and_fill(0, 0, 0, 0)
 
     #
     def lights_waiting_for_players(self):
+        Logger.info("MainApp: Waiting for player lights")
         self.arena.led_brightness_and_fill(255, *YELLOW)
 
     #
     def lights_player_1_ready(self):
+        Logger.info("MainApp: Player 1 lights ready")
         self.arena.led_player_1_lights(*PLAYER_1_COLOR)
 
     #
     def lights_player_2_ready(self):
+        Logger.info("MainApp: Player 2 lights ready")
         self.arena.led_player_2_lights(*PLAYER_2_COLOR)
 
     #
     def lights_player_1_door_closed(self):
+        Logger.info("MainApp: Player 1 door closed")
         self.arena.led_player_1_lights(*PINK)
 
     #
     def lights_player_1_door_opened(self):
+        Logger.info("MainApp: Player 2 door opened")
         self.arena.led_player_1_lights(*YELLOW)
 
     #
     def lights_player_2_door_closed(self):
+        Logger.info("MainApp: Player 2 door closed")
         self.arena.led_player_2_lights(*PURPLE)
 
     #
     def lights_player_2_door_opened(self):
+        Logger.info("MainApp: Player 2 door opened")
         self.arena.led_player_2_lights(*YELLOW)
 
     #
@@ -1273,22 +1281,27 @@ class MainApp(App):
 
     #
     def lights_soccer_team_1_wins(self):
+        Logger.info("MainApp: Player 1 soccer winner")
         self.arena.led_brightness_and_fill(255, *PLAYER_1_COLOR)
 
     #
     def lights_soccer_team_2_wins(self):
+        Logger.info("MainApp: Player 2 soccer winner")
         self.arena.led_brightness_and_fill(255, *PLAYER_2_COLOR)
 
     #
     def lights_dm_player_1_wins(self):
+        Logger.info("MainApp: Player 1 DM winner")
         self.arena.led_brightness_and_fill(255, *PLAYER_1_COLOR)
 
     #
     def lights_dm_player_2_wins(self):
+        Logger.info("MainApp: Player 2 DM winner")
         self.arena.led_brightness_and_fill(255, *PLAYER_2_COLOR)
 
     #
     def lights_soccer_match_tie(self):
+        Logger.info("MainApp: Soccer tie")
         self.arena.led_brightness_and_fill(255, *ORANGE)
 
     #
@@ -1304,33 +1317,41 @@ class MainApp(App):
         return self.arena.get_led_count()
 
     def close_player_1_door(self):
+        Logger.info("MainApp: Player 1 closing door")
         self.arena.close_player_1_door()
         Clock.schedule_once(self.door_stopper_p1, 3)
 
     def close_player_2_door(self):
+        Logger.info("MainApp: Player 2 closing door")
         self.arena.close_player_2_door()
         Clock.schedule_once(self.door_stopper_p2, 3)
 
     def open_player_1_door(self, duration):
+        Logger.info("MainApp: Player 1 opening door")
         self.arena.open_player_1_door()
         Clock.schedule_once(self.door_stopper_p1, duration)
 
     def open_player_2_door(self, duration):
+        Logger.info("MainApp: Player 2 opening door")
         self.arena.open_player_2_door()
         Clock.schedule_once(self.door_stopper_p2, duration)
 
     def close_player_1_door(self, duration):
+        Logger.info("MainApp: Player 1 close door")
         self.arena.close_player_1_door()
         Clock.schedule_once(self.door_stopper_p1, duration)
 
     def close_player_2_door(self, duration):
+        Logger.info("MainApp: Player 2 close door")
         self.arena.close_player_2_door()
         Clock.schedule_once(self.door_stopper_p2, duration)
 
     def door_stopper_p1(self, val):
+        Logger.info("MainApp: Player 1 closing door")
         self.arena.stop_player_1_door()
 
     def door_stopper_p2(self, val):
+        Logger.info("MainApp: Player 2 closing door")
         self.arena.stop_player_2_door()
     #
     def do_door_drop(self):

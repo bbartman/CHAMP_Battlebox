@@ -1,70 +1,49 @@
 #include <Adafruit_NeoPixel.h>
 #include <errno.h>
 #include <ctype.h>
-
+#include <Servo.h>
 // Giving some default values here.
 const int LightPin = 3;
 
 // Motor controlling pins
-const int M1_1_Pin = 4;
-const int M1_2_Pin = 5;
-const int M2_1_Pin = 6;
-const int M2_2_Pin = 7;
+const int M1_1_Pin = 5;
+const int M1_2_Pin = 6;
+// const int M2_1_Pin = 6;
+// const int M2_2_Pin = 7;
 
-struct RelayMotorController {
-  int relay1 = 0;
-  int relay2 = 0;
-
-  RelayMotorController(int pin1, int pin2)
-    :relay1(pin1), relay2(pin2)
+struct ServoMC {
+  int controlPin = 0;
+  Servo S;
+  ServoMC(int pin1)
+    :controlPin(pin1)
   {
 
   }
 
   void setup() {
-    if (relay1 >= 0) {
-      pinMode(relay1, OUTPUT);
-      digitalWrite(relay1, LOW);
-    }
-    if (relay2 >= 0) {
-      pinMode(relay2, OUTPUT);
-      digitalWrite(relay2, LOW);
-    }
+    S.attach(controlPin);
   }
-  ~RelayMotorController() {
-    //if (relay1 >= 0)
-    //  pinMode(relay1, INPUT);
-    //if (relay2 >= 0)
-    //  pinMode(relay2, INPUT);
-  }
+  ~ServoMC() {}
 
   void forward() {
-    digitalWrite(relay1, HIGH);
-    digitalWrite(relay2, LOW);
+    S.write(5);
   }
 
   void backward() {
-    digitalWrite(relay1, LOW);
-    digitalWrite(relay2, HIGH);
+    S.write(65);
   }
 
-  void off() {
-    digitalWrite(relay1, LOW);
-    digitalWrite(relay2, LOW);
-  }
+  void off() { }
 };
 
 // Gloabls
 size_t PixelCount = 3;
 Adafruit_NeoPixel *Pixels = nullptr;
-RelayMotorController M1(M1_1_Pin, M1_2_Pin);
-RelayMotorController M2(M2_1_Pin, M2_2_Pin);
+ServoMC M1(M1_1_Pin);
+ServoMC M2(M1_2_Pin);
 
 // Types
 using Color = uint32_t;
-
-
-
 
 // Actual physical color configuration
 // Blue->Green->Red
