@@ -268,31 +268,19 @@ class Arena(EventDispatcher):
         return self.led_light_count
 
     def close_player_1_door(self):
-        if self.motor_1_dir == 0:
-            self.arduino.write_line("m1.open")
-        else:
-            self.arduino.write_line("m1.close")
+        self.arduino.write_line("m1.close")
 
     def open_player_1_door(self):
-        if self.motor_1_dir == 0:
-            self.arduino.write_line("m1.close")
-        else:
-            self.arduino.write_line("m1.open")
+        self.arduino.write_line("m1.open")    
         
     def stop_player_1_door(self):
         self.arduino.write_line("m1.off")
         
     def close_player_2_door(self):
-        if self.motor_2_dir == 0:
-            self.arduino.write_line("m2.open")
-        else:
-            self.arduino.write_line("m2.close")
+        self.arduino.write_line("m2.open")
         
-    def open_player_2_door(self):
-        if self.motor_2_dir == 0:
-            self.arduino.write_line("m2.close")
-        else:
-            self.arduino.write_line("m2.open")
+    def open_player_2_door(self):        
+        self.arduino.write_line("m2.close")
         
     def stop_player_2_door(self):
         self.arduino.write_line("m2.off")

@@ -654,6 +654,14 @@ class WaitForPlayersAndDoors(Screen):
             ready_button=self.on_player_2_pressed_ready_button,
             door_button=self.on_player_2_closed_door)
 
+    def on_enter(self):
+        self.player_1_door_closed = App.get_running_app().arena.player_1.read_button
+        self.player_2_door_closed = App.get_running_app().arena.player_2.read_button
+        if not self.player_1_door_closed:
+            App.get_running_app().open_player_1_door(3)
+        if not self.player_2_door_closed:
+            App.get_running_app().open_player_2_door(3)
+
     def on_leave(self):
         Animation.cancel_all(self.ids.player_1_door_label)
         Animation.cancel_all(self.ids.player_2_door_label)
@@ -1318,7 +1326,7 @@ class MainApp(App):
 
     def close_player_1_door(self):
         Logger.info("MainApp: Player 1 closing door")
-        self.arena.close_player_1_door()
+        self.arena.open_player_1_door()
         Clock.schedule_once(self.door_stopper_p1, 3)
 
     def close_player_2_door(self):
@@ -1328,7 +1336,7 @@ class MainApp(App):
 
     def open_player_1_door(self, duration):
         Logger.info("MainApp: Player 1 opening door")
-        self.arena.open_player_1_door()
+        self.arena.close_player_1_door()
         Clock.schedule_once(self.door_stopper_p1, duration)
 
     def open_player_2_door(self, duration):
@@ -1338,7 +1346,7 @@ class MainApp(App):
 
     def close_player_1_door(self, duration):
         Logger.info("MainApp: Player 1 close door")
-        self.arena.close_player_1_door()
+        self.arena.open_player_1_door()
         Clock.schedule_once(self.door_stopper_p1, duration)
 
     def close_player_2_door(self, duration):

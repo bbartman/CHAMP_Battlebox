@@ -6,8 +6,8 @@
 const int LightPin = 3;
 
 // Motor controlling pins
-const int M1_1_Pin = 5;
-const int M1_2_Pin = 6;
+const int M1_1_Pin = 6;
+const int M1_2_Pin = 5;
 // const int M2_1_Pin = 6;
 // const int M2_2_Pin = 7;
 
@@ -26,11 +26,18 @@ struct ServoMC {
   ~ServoMC() {}
 
   void forward() {
+    // S.attach(controlPin);
     S.write(5);
+    // delay(15);
+    // S.detach();
+    // S.write(65);
   }
 
   void backward() {
-    S.write(65);
+    // S.attach(controlPin);
+    S.write(90);
+    // delay(15);
+    // S.detach();
   }
 
   void off() { }
@@ -53,6 +60,8 @@ void setup() {
   Pixels = new Adafruit_NeoPixel(PixelCount, LightPin, NEO_GRB + NEO_KHZ800);
   M1.setup();
   M2.setup();
+  M1.backward();
+  M2.forward();
   Serial.begin(115200);
   Pixels->begin();
   Serial.println("ready");
@@ -418,7 +427,8 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
       break;
     }
-    M1.forward();
+    M1.backward();
+    
     Serial.println("OK");
     break;
 
@@ -427,7 +437,7 @@ void processCommand(int Cmd) {
       printIncorrectNumberOfArgumentsError(0, ArgCount);
       break;
     }
-    M1.backward();
+    M1.forward();
     Serial.println("OK");
     break;
 
