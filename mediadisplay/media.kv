@@ -111,25 +111,25 @@
                     cols: 3
                     size_hint: [1, .3]
                     Label:
-                        text: rss.red_team_name
+                        text: rss.blue_team_name
                         font_size:80
                     Label:
                         text:""
                         font_size:10
                     Label:
-                        text: rss.blue_team_name
+                        text: rss.red_team_name
                         font_size:80
                 GridLayout:
                     cols: 3
                     size_hint: [1, .3]
                     Label:
-                        text: str(rss.red_score)
+                        text: str(rss.blue_score)
                         font_size:80
                     Label:
                         text:"-"
                         font_size:150
                     Label:
-                        text: str(rss.blue_score)
+                        text: str(rss.red_score)
                         font_size:80
                 Label:
                     id: time
@@ -189,12 +189,12 @@
             BackgroundLabel:
                 background_color: wfp.red_bg_color
                 id: redReady
-                text: "Red Ready?"
+                text: "Blue Ready?"
                 font_size: 30
             BackgroundLabel:
                 background_color: wfp.blue_bg_color
                 id: blueReady
-                text: "Blue Ready?"
+                text: "Red Ready?"
                 font_size: 30
 
 
