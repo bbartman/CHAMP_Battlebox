@@ -399,6 +399,8 @@ class SoccerScreen(Screen):
 
     def reset_screen(self, app):
         # app.data.soccer_match.reset()
+        app.data.soccer_match.team_one_name = ""
+        app.data.soccer_match.team_two_name = ""
         pass
 
     def on_match_validation(self, app, root):
