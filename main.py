@@ -1375,7 +1375,7 @@ class MainApp(App):
         elif self.data.death_match.door_drop == 'Drop Player 2 Door Only':
             self.open_player_2_door(3)
         elif self.data.death_match.door_drop == 'Drop Random Door':
-            if (random.randint() % 2) == 1:
+            if (random.randint(0, 1) % 2) == 1:
                 self.open_player_1_door(3)
             else:
                 self.open_player_2_door(3)
