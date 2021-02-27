@@ -276,6 +276,8 @@ class RunDeathmatchScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.animation = None
+        self.say_halt = False
+
     def on_leave(self):
         if self.animation is not None:
             Animation.cancel_all(self)
@@ -317,6 +319,16 @@ class RunDeathmatchScreen(Screen):
                 clockStartTimeInMs/1000.0)
 
     def on_seconds(self, instance, value):
+        try:
+            if (float(self.ids.time.text) >= self.seconds):
+                self.say_halt = True 
+        except:
+            pass
+        self.ids.time.text = str(round(self.seconds, 1))
+        if (float(self.seconds) <= 0.0):
+            if self.say_halt: 
+                App.get_running_app().soundboard.aplay(App.get_running_app().soundboard.hault)
+                self.say_halt = False
         self.ids.time.text = str(round(self.seconds, 1))
 
 class RunSoccerScreen(Screen):
@@ -331,15 +343,27 @@ class RunSoccerScreen(Screen):
         self.animation = None
         self.red_team_goal_anim = None
         self.blue_team_goal_anim = None
+        self.say_halt = False
 
     def on_leave(self):
         Animation.cancel_all(self)
         self.animation = None
+
     def on_enter(self):
         self.seconds = 0
+        
 
     def on_seconds(self, instance, value):
+        try:
+            if (float(self.ids.time.text) >= self.seconds):
+                self.say_halt = True 
+        except:
+            pass
         self.ids.time.text = str(round(self.seconds, 1))
+        if (float(self.seconds) <= 0.0):
+            if self.say_halt: 
+                App.get_running_app().soundboard.aplay(App.get_running_app().soundboard.hault)
+                self.say_halt = False
 
     def run_animation(self, duration, deltaTime):
         self.seconds = duration

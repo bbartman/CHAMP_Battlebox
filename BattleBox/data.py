@@ -5,7 +5,7 @@ class BBDeathMatchProp(EventDispatcher):
     duration = NumericProperty(180)
     player_one_name = StringProperty("", allownone=False)
     player_two_name = StringProperty("", allownone=False)
-    door_drop = StringProperty("Drop Both", allownone=False)
+    door_drop = StringProperty("Drop Random Door", allownone=False)
     door_drop_duration = NumericProperty(120)
 
     def get_player_one_name(self):

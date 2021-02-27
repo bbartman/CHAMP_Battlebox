@@ -150,9 +150,10 @@
                     text:rss.blue_team_name + "\nGOAL!!!!!"
                     font_size: 300
 
-
 <MatchOver@Screen>
     name: 'MatchOver'
+    on_enter:
+        aoo.soundboard.aplay(app.soundboard.hault)
     GridLayout:
         cols: 1
         Label:
@@ -214,22 +215,22 @@
             BackgroundLabel:
                 background_color: wfp.red_bg_color
                 id: redReady
-                text: "Red Ready?"
+                text: "Blue Ready?"
                 font_size: 30
             BackgroundLabel:
                 background_color: wfp.blue_bg_color
                 id: blueReady
-                text: "Blue Ready?"
+                text: "Red Ready?"
                 font_size: 30
             BackgroundLabel:
                 background_color: wfp.red_door_bg_color
                 id: redDoor
-                text: "Red Door Closed"
+                text: "Blue Door Closed"
                 font_size: 30
             BackgroundLabel:
                 background_color: wfp.blue_door_bg_color
                 id: blueDoor
-                text: "Blue Door Closed"
+                text: "Red Door Closed"
                 font_size: 30
 
 

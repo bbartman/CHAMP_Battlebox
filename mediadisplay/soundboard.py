@@ -40,6 +40,7 @@ class SoundBoard:
         self.cd_go = self._load_sound_cfg("go")
         self.soccer_screen = self._load_sound_cfg("soccer")
         self.deathmatch_screen = self._load_sound_cfg("deathmatch")
+        self.hault = self._load_sound_cfg("hault")
 
     def _play(self, sound):
         Logger.info(f"Attempting to play through aplay {sound.source}")
