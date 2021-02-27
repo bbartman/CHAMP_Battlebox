@@ -92,7 +92,9 @@ class UIntInput(TextInput):
 
 class DeathmatchScreen(Screen):
     def reset_screen(self, app):
-        app.data.death_match.reset()
+        # app.data.death_match.reset()
+        app.data.death_match.player_one_name = ""
+        app.data.death_match.player_two_name = ""
         self.ids.dm_door_drop.do_update_main_button(app.data.death_match.door_drop)
     
     data = ObjectProperty(None)
@@ -396,7 +398,8 @@ class SoccerScreen(Screen):
         App.get_running_app().arena.led_brightness(255)
 
     def reset_screen(self, app):
-        app.data.soccer_match.reset()
+        # app.data.soccer_match.reset()
+        pass
 
     def on_match_validation(self, app, root):
         if self.data.duration == 0:
@@ -1375,7 +1378,7 @@ class MainApp(App):
         elif self.data.death_match.door_drop == 'Drop Player 2 Door Only':
             self.open_player_2_door(3)
         elif self.data.death_match.door_drop == 'Drop Random Door':
-            if (random.randint(0, 1) % 2) == 1:
+            if random.randint(0, 2) == 1:
                 self.open_player_1_door(3)
             else:
                 self.open_player_2_door(3)
